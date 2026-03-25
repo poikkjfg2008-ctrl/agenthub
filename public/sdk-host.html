@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSDK Host</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        #websdk-container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .error {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            flex-direction: column;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .error h2 {
+            color: #e53e3e;
+            margin-bottom: 10px;
+        }
+
+        .error p {
+            color: #666;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div id="websdk-container">
+        <div class="loading">加载中...</div>
+    </div>
+
+    <script>
+        let sdkScript = null;
+        let sdkInstance = null;
+
+        // Listen for messages from parent
+        window.addEventListener('message', async (event) => {
+            // Validate origin in production
+            // if (event.origin !== YOUR_ALLOWED_ORIGIN) return;
+
+            const { type, config } = event.data;
+
+            if (type === 'init' && config) {
+                await initWebSDK(config);
+            }
+        });
+
+        async function initWebSDK(config) {
+            const container = document.getElementById('websdk-container');
+
+            try {
+                // Load WebSDK script
+                if (!sdkScript) {
+                    sdkScript = document.createElement('script');
+                    sdkScript.src = config.baseUrl + '/resources/product/llm/public/sdk/embedLite.js';
+                    sdkScript.onload = () => initializeSDK(config);
+                    sdkScript.onerror = () => showError('WebSDK 加载失败');
+                    document.head.appendChild(sdkScript);
+                } else {
+                    initializeSDK(config);
+                }
+            } catch (error) {
+                showError('初始化失败: ' + error.message);
+            }
+        }
+
+        function initializeSDK(config) {
+            const container = document.getElementById('websdk-container');
+
+            // Clear loading message
+            container.innerHTML = '';
+
+            // Create WebSDK container
+            const sdkContainer = document.createElement('div');
+            sdkContainer.id = 'websdk-embed';
+            sdkContainer.style.width = '100%';
+            sdkContainer.style.height = '100%';
+            container.appendChild(sdkContainer);
+
+            // Initialize WebSDK (adjust based on actual WebSDK API)
+            if (window.WebSDK) {
+                sdkInstance = new window.WebSDK({
+                    container: '#websdk-embed',
+                    appKey: config.appKey,
+                    token: config.launchToken,
+                    user: config.userContext,
+                    baseUrl: config.baseUrl,
+                });
+            } else {
+                showError('WebSDK 未正确加载');
+            }
+        }
+
+        function showError(message) {
+            const container = document.getElementById('websdk-container');
+            container.innerHTML = `
+                <div class="error">
+                    <h2>加载失败</h2>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        // Notify parent that iframe is ready
+        window.parent.postMessage({ type: 'ready' }, '*');
+    </script>
+</body>
+</html>

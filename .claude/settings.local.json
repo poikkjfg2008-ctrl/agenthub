@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/home/yy/python312 -m pip list | grep -i opencode)",
+      "Bash(/home/yy/python312 -m pip list | grep -i openwork)",
+      "Bash(opencode --version)",
+      "Bash(openwork --version)",
+      "Bash(/home/yy/python312/bin/python -m pip list)",
+      "Bash(opencode server --help 2>&1 | head -30)",
+      "Bash(openwork server --help 2>&1 | head -30)",
+      "Bash(which redis-server && redis-server --version)",
+      "Bash(which nginx && nginx -v)",
+      "Bash(which npm && npm -v)",
+      "Bash(which sqlite3 && sqlite3 --version)",
+      "Bash(systemctl list-units --type=service | grep -E 'redis|mysql|postgres' || echo \"No DB services found\")",
+      "Bash(npm list -g 2>/dev/null | grep -E '@vue|react|angular|vite|webpack' || echo \"Checking local npm packages...\")",
+      "Bash(/home/yy/python312/bin/python -c \"import fastapi; print\\('FastAPI:', fastapi.__version__\\)\" 2>&1 || echo \"FastAPI not installed\")",
+      "Bash(/home/yy/python312/bin/python -c \"import uvicorn; print\\('Uvicorn:', uvicorn.__version__\\)\" 2>&1 || echo \"Uvicorn not installed\")",
+      "Bash(cd frontend && npm create vite@latest . -- --template react-ts)",
+      "Bash(chmod +x /home/yy/agenthub/scripts/start.sh /home/yy/agenthub/scripts/stop.sh)"
+    ]
+  }
+}
