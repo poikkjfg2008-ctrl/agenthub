@@ -27,3 +27,4 @@
   22 |  export function SessionSidebar({
   23 |    currentSessionId,
 07:11:33 [vite] (client) hmr update /src/styles/globals.css, /src/App.tsx
+07:17:19 [vite] (client) page reload index.test.html

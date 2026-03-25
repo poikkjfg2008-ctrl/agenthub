@@ -39,7 +39,15 @@
       "Bash(grep -n \"from './api'\" /home/yy/agenthub/frontend/src/components/*.tsx 2>/dev/null || echo \"没有找到其他错误的导入\")",
       "Bash(sleep 3 && curl -s http://localhost:5173 | grep -o '<title>.*</title>')",
       "Bash(echo \"=== AI Portal 系统状态检查 ===\" && echo \"\" && echo \"1. 后端健康检查:\" && curl -s http://localhost:8000/api/health | python3 -m json.tool && echo \"\" && echo \"2. 前端页面标题:\" && curl -s http://localhost:5173 | grep -o '<title>.*</title>' && echo \"\" && echo \"3. API 文档可访问:\" && curl -s -o /dev/null -w \"HTTP状态码: %{http_code}\\\\n\" http://localhost:8000/docs && echo \"\" && echo \"4. 运行进程:\" && ps aux | grep -E \"uvicorn|vite\" | grep -v grep | wc -l && echo \"个服务进程在运行\")",
-      "Bash(chmod +x /home/yy/agenthub/backend/tests/run_backend_tests.sh)"
+      "Bash(chmod +x /home/yy/agenthub/backend/tests/run_backend_tests.sh)",
+      "Bash(/home/yy/python312/bin/python tests/test_api.py 2>&1)",
+      "Bash(cd /home/yy/agenthub/backend && /home/yy/python312/bin/python tests/test_api.py 2>&1)",
+      "Bash(/home/yy/python312/bin/python -m pip install pytest pytest-asyncio)",
+      "Bash(/home/yy/python312/bin/python tests/test_api_simple.py 2>&1)",
+      "Bash(curl -v \"http://localhost:8000/api/auth/mock-login?emp_no=E10001\" 2>&1 | grep -E \"\\(Set-Cookie|HTTP|Location\\)\")",
+      "Bash(sleep 5 && curl -v \"http://localhost:8000/api/auth/mock-login?emp_no=E10001\" 2>&1 | grep -E \"\\(Set-Cookie|HTTP|Location\\)\" | head -5)",
+      "Bash(sleep 3 && curl -v \"http://localhost:8000/api/auth/mock-login?emp_no=E10001\" 2>&1 | grep -E \"\\(Set-Cookie|HTTP|access_token\\)\" | head -5)",
+      "Bash(chmod +x /home/yy/agenthub/scripts/test.sh)"
     ]
   }
 }

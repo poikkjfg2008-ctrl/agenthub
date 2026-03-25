@@ -1,6 +1,5 @@
 """AI Portal 后端 API 基础功能测试"""
 
-import pytest
 import httpx
 import asyncio
 from typing import Dict, Optional
@@ -64,9 +63,10 @@ class TestAPI:
 
                 # 检查是否有重定向
                 if response.status_code in [302, 307]:
-                    # 保存 cookies
+                    # 保存 cookies 到客户端
+                    self.client = httpx.AsyncClient()
                     for cookie in response.cookies:
-                        self.cookies[cookie.name] = cookie.value
+                        self.client.cookies.set(cookie.name, cookie.value)
                     self.log_result("模拟登录", "通过", "登录成功，获得token", elapsed)
                     return True
                 else:
@@ -78,166 +78,166 @@ class TestAPI:
 
     async def test_get_current_user(self):
         """测试获取当前用户信息"""
-        try:
-            async with httpx.AsyncClient() as client:
-                import time
-                start = time.time()
-                response = await client.get(
-                    f"{self.base_url}/api/auth/me",
-                    cookies=self.cookies
-                )
-                elapsed = (time.time() - start) * 1000
+        if not hasattr(self, 'client'):
+            self.log_result("获取用户信息", "跳过", "未登录", 0)
+            return False
 
-                if response.status_code == 200:
-                    data = response.json()
-                    if data.get("emp_no") == "E10001":
-                        self.log_result("获取用户信息", "通过", f"用户: {data.get('name')}", elapsed)
-                        return True
-                    else:
-                        self.log_result("获取用户信息", "失败", f"用户信息异常: {data}", elapsed)
-                        return False
+        try:
+            import time
+            start = time.time()
+            response = await self.client.get(f"{self.base_url}/api/auth/me")
+            elapsed = (time.time() - start) * 1000
+
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("emp_no") == "E10001":
+                    self.log_result("获取用户信息", "通过", f"用户: {data.get('name')}", elapsed)
+                    return True
                 else:
-                    self.log_result("获取用户信息", "失败", f"HTTP {response.status_code}", elapsed)
+                    self.log_result("获取用户信息", "失败", f"用户信息异常: {data}", elapsed)
                     return False
+            else:
+                self.log_result("获取用户信息", "失败", f"HTTP {response.status_code}", elapsed)
+                return False
         except Exception as e:
             self.log_result("获取用户信息", "失败", f"异常: {str(e)}", 0)
             return False
 
     async def test_list_resources(self):
         """测试列出资源"""
-        try:
-            async with httpx.AsyncClient() as client:
-                import time
-                start = time.time()
-                response = await client.get(
-                    f"{self.base_url}/api/resources",
-                    cookies=self.cookies
-                )
-                elapsed = (time.time() - start) * 1000
+        if not hasattr(self, 'client'):
+            self.log_result("列出资源", "跳过", "未登录", 0)
+            return False
 
-                if response.status_code == 200:
-                    data = response.json()
-                    if isinstance(data, list) and len(data) > 0:
-                        self.log_result("列出资源", "通过", f"找到 {len(data)} 个资源", elapsed)
-                        return True
-                    else:
-                        self.log_result("列出资源", "失败", "资源列表为空或格式错误", elapsed)
-                        return False
+        try:
+            import time
+            start = time.time()
+            response = await self.client.get(f"{self.base_url}/api/resources")
+            elapsed = (time.time() - start) * 1000
+
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list) and len(data) > 0:
+                    self.log_result("列出资源", "通过", f"找到 {len(data)} 个资源", elapsed)
+                    return True
                 else:
-                    self.log_result("列出资源", "失败", f"HTTP {response.status_code}", elapsed)
+                    self.log_result("列出资源", "失败", "资源列表为空或格式错误", elapsed)
                     return False
+            else:
+                self.log_result("列出资源", "失败", f"HTTP {response.status_code}", elapsed)
+                return False
         except Exception as e:
             self.log_result("列出资源", "失败", f"异常: {str(e)}", 0)
             return False
 
     async def test_list_grouped_resources(self):
         """测试列出分组资源"""
-        try:
-            async with httpx.AsyncClient() as client:
-                import time
-                start = time.time()
-                response = await client.get(
-                    f"{self.base_url}/api/resources/grouped",
-                    cookies=self.cookies
-                )
-                elapsed = (time.time() - start) * 1000
+        if not hasattr(self, 'client'):
+            self.log_result("列出分组资源", "跳过", "未登录", 0)
+            return False
 
-                if response.status_code == 200:
-                    data = response.json()
-                    if isinstance(data, dict) and len(data) > 0:
-                        groups = list(data.keys())
-                        self.log_result("列出分组资源", "通过", f"找到 {len(groups)} 个分组: {', '.join(groups)}", elapsed)
-                        return True
-                    else:
-                        self.log_result("列出分组资源", "失败", "分组数据为空或格式错误", elapsed)
-                        return False
+        try:
+            import time
+            start = time.time()
+            response = await self.client.get(f"{self.base_url}/api/resources/grouped")
+            elapsed = (time.time() - start) * 1000
+
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, dict) and len(data) > 0:
+                    groups = list(data.keys())
+                    self.log_result("列出分组资源", "通过", f"找到 {len(groups)} 个分组: {', '.join(groups)}", elapsed)
+                    return True
                 else:
-                    self.log_result("列出分组资源", "失败", f"HTTP {response.status_code}", elapsed)
+                    self.log_result("列出分组资源", "失败", "分组数据为空或格式错误", elapsed)
                     return False
+            else:
+                self.log_result("列出分组资源", "失败", f"HTTP {response.status_code}", elapsed)
+                return False
         except Exception as e:
             self.log_result("列出分组资源", "失败", f"异常: {str(e)}", 0)
             return False
 
     async def test_get_resource(self):
         """测试获取单个资源"""
-        try:
-            async with httpx.AsyncClient() as client:
-                import time
-                start = time.time()
-                response = await client.get(
-                    f"{self.base_url}/api/resources/general-chat",
-                    cookies=self.cookies
-                )
-                elapsed = (time.time() - start) * 1000
+        if not hasattr(self, 'client'):
+            self.log_result("获取单个资源", "跳过", "未登录", 0)
+            return False
 
-                if response.status_code == 200:
-                    data = response.json()
-                    if data.get("id") == "general-chat":
-                        self.log_result("获取单个资源", "通过", f"资源: {data.get('name')}", elapsed)
-                        return True
-                    else:
-                        self.log_result("获取单个资源", "失败", f"资源ID不匹配: {data}", elapsed)
-                        return False
+        try:
+            import time
+            start = time.time()
+            response = await self.client.get(f"{self.base_url}/api/resources/general-chat")
+            elapsed = (time.time() - start) * 1000
+
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("id") == "general-chat":
+                    self.log_result("获取单个资源", "通过", f"资源: {data.get('name')}", elapsed)
+                    return True
                 else:
-                    self.log_result("获取单个资源", "失败", f"HTTP {response.status_code}", elapsed)
+                    self.log_result("获取单个资源", "失败", f"资源ID不匹配: {data}", elapsed)
                     return False
+            else:
+                self.log_result("获取单个资源", "失败", f"HTTP {response.status_code}", elapsed)
+                return False
         except Exception as e:
             self.log_result("获取单个资源", "失败", f"异常: {str(e)}", 0)
             return False
 
     async def test_launch_native_resource(self):
         """测试启动原生资源"""
-        try:
-            async with httpx.AsyncClient() as client:
-                import time
-                start = time.time()
-                response = await client.post(
-                    f"{self.base_url}/api/resources/general-chat/launch",
-                    cookies=self.cookies
-                )
-                elapsed = (time.time() - start) * 1000
+        if not hasattr(self, 'client'):
+            self.log_result("启动原生资源", "跳过", "未登录", 0)
+            return False
 
-                if response.status_code == 200:
-                    data = response.json()
-                    if data.get("kind") == "native" and data.get("portal_session_id"):
-                        self.session_id = data.get("portal_session_id")
-                        self.log_result("启动原生资源", "通过", f"会话ID: {self.session_id[:8]}...", elapsed)
-                        return True
-                    else:
-                        self.log_result("启动原生资源", "失败", f"响应格式错误: {data}", elapsed)
-                        return False
+        try:
+            import time
+            start = time.time()
+            response = await self.client.post(f"{self.base_url}/api/resources/general-chat/launch")
+            elapsed = (time.time() - start) * 1000
+
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("kind") == "native" and data.get("portal_session_id"):
+                    self.session_id = data.get("portal_session_id")
+                    self.log_result("启动原生资源", "通过", f"会话ID: {self.session_id[:8]}...", elapsed)
+                    return True
                 else:
-                    detail = response.json().get("detail", "未知错误") if response.headers.get("content-type", "").startswith("application/json") else response.text
-                    self.log_result("启动原生资源", "失败", f"HTTP {response.status_code}: {detail}", elapsed)
+                    self.log_result("启动原生资源", "失败", f"响应格式错误: {data}", elapsed)
                     return False
+            else:
+                detail = response.json().get("detail", "未知错误") if response.headers.get("content-type", "").startswith("application/json") else response.text
+                self.log_result("启动原生资源", "失败", f"HTTP {response.status_code}: {detail}", elapsed)
+                return False
         except Exception as e:
             self.log_result("启动原生资源", "失败", f"异常: {str(e)}", 0)
             return False
 
     async def test_list_sessions(self):
         """测试列出会话"""
-        try:
-            async with httpx.AsyncClient() as client:
-                import time
-                start = time.time()
-                response = await client.get(
-                    f"{self.base_url}/api/sessions",
-                    cookies=self.cookies
-                )
-                elapsed = (time.time() - start) * 1000
+        if not hasattr(self, 'client'):
+            self.log_result("列出会话", "跳过", "未登录", 0)
+            return False
 
-                if response.status_code == 200:
-                    data = response.json()
-                    sessions = data.get("sessions", [])
-                    if isinstance(sessions, list):
-                        self.log_result("列出会话", "通过", f"找到 {len(sessions)} 个会话", elapsed)
-                        return True
-                    else:
-                        self.log_result("列出会话", "失败", "会话列表格式错误", elapsed)
-                        return False
+        try:
+            import time
+            start = time.time()
+            response = await self.client.get(f"{self.base_url}/api/sessions")
+            elapsed = (time.time() - start) * 1000
+
+            if response.status_code == 200:
+                data = response.json()
+                sessions = data.get("sessions", [])
+                if isinstance(sessions, list):
+                    self.log_result("列出会话", "通过", f"找到 {len(sessions)} 个会话", elapsed)
+                    return True
                 else:
-                    self.log_result("列出会话", "失败", f"HTTP {response.status_code}", elapsed)
+                    self.log_result("列出会话", "失败", "会话列表格式错误", elapsed)
                     return False
+            else:
+                self.log_result("列出会话", "失败", f"HTTP {response.status_code}", elapsed)
+                return False
         except Exception as e:
             self.log_result("列出会话", "失败", f"异常: {str(e)}", 0)
             return False
@@ -248,56 +248,59 @@ class TestAPI:
             self.log_result("发送消息", "跳过", "没有可用的会话", 0)
             return False
 
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                import time
-                start = time.time()
-                response = await client.post(
-                    f"{self.base_url}/api/sessions/{self.session_id}/messages",
-                    json={"text": "你好，这是一个测试消息"},
-                    cookies=self.cookies
-                )
-                elapsed = (time.time() - start) * 1000
+        if not hasattr(self, 'client'):
+            self.log_result("发送消息", "跳过", "未登录", 0)
+            return False
 
-                if response.status_code == 200:
-                    data = response.json()
-                    if "response" in data:
-                        self.log_result("发送消息", "通过", f"收到回复: {data['response'][:50]}...", elapsed)
-                        return True
-                    else:
-                        self.log_result("发送消息", "失败", f"响应格式错误: {data}", elapsed)
-                        return False
+        try:
+            import time
+            start = time.time()
+            response = await self.client.post(
+                f"{self.base_url}/api/sessions/{self.session_id}/messages",
+                json={"text": "你好，这是一个测试消息"},
+                timeout=30.0
+            )
+            elapsed = (time.time() - start) * 1000
+
+            if response.status_code == 200:
+                data = response.json()
+                if "response" in data:
+                    self.log_result("发送消息", "通过", f"收到回复: {data['response'][:50]}...", elapsed)
+                    return True
                 else:
-                    detail = response.json().get("detail", "未知错误") if response.headers.get("content-type", "").startswith("application/json") else response.text
-                    self.log_result("发送消息", "失败", f"HTTP {response.status_code}: {detail}", elapsed)
+                    self.log_result("发送消息", "失败", f"响应格式错误: {data}", elapsed)
                     return False
+            else:
+                detail = response.json().get("detail", "未知错误") if response.headers.get("content-type", "").startswith("application/json") else response.text
+                self.log_result("发送消息", "失败", f"HTTP {response.status_code}: {detail}", elapsed)
+                return False
         except Exception as e:
             self.log_result("发送消息", "失败", f"异常: {str(e)}", 0)
             return False
 
     async def test_list_skills(self):
         """测试列出技能"""
-        try:
-            async with httpx.AsyncClient() as client:
-                import time
-                start = time.time()
-                response = await client.get(
-                    f"{self.base_url}/api/skills",
-                    cookies=self.cookies
-                )
-                elapsed = (time.time() - start) * 1000
+        if not hasattr(self, 'client'):
+            self.log_result("列出技能", "跳过", "未登录", 0)
+            return False
 
-                if response.status_code == 200:
-                    data = response.json()
-                    if isinstance(data, list):
-                        self.log_result("列出技能", "通过", f"找到 {len(data)} 个技能", elapsed)
-                        return True
-                    else:
-                        self.log_result("列出技能", "失败", "技能列表格式错误", elapsed)
-                        return False
+        try:
+            import time
+            start = time.time()
+            response = await self.client.get(f"{self.base_url}/api/skills")
+            elapsed = (time.time() - start) * 1000
+
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_result("列出技能", "通过", f"找到 {len(data)} 个技能", elapsed)
+                    return True
                 else:
-                    self.log_result("列出技能", "失败", f"HTTP {response.status_code}", elapsed)
+                    self.log_result("列出技能", "失败", "技能列表格式错误", elapsed)
                     return False
+            else:
+                self.log_result("列出技能", "失败", f"HTTP {response.status_code}", elapsed)
+                return False
         except Exception as e:
             self.log_result("列出技能", "失败", f"异常: {str(e)}", 0)
             return False
@@ -346,6 +349,10 @@ class TestAPI:
         for test_name, test_func in tests:
             await test_func()
             await asyncio.sleep(0.5)  # 避免请求过快
+
+        # 关闭客户端
+        if hasattr(self, 'client'):
+            await self.client.aclose()
 
         return self.test_results
 

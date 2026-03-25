@@ -55,8 +55,16 @@ async def mock_login(emp_no: str, response: Response):
         max_age=86400  # 24 hours
     )
 
-    # Redirect to main app
-    return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+    # Return JSON response with redirect info
+    return {
+        "message": "Login successful",
+        "redirect": "/",
+        "user": {
+            "emp_no": user.emp_no,
+            "name": user.name,
+            "dept": user.dept
+        }
+    }
 
 
 @router.get("/callback")

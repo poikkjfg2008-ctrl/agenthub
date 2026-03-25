@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Portal 前端测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .test-controls {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 6px;
+        }
+        button {
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0284c7;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        .test-result {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 4px;
+            border-left: 4px solid #ccc;
+        }
+        .test-result.pass {
+            background: #f0fdf4;
+            border-left-color: #22c55e;
+        }
+        .test-result.fail {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+        }
+        .test-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .test-message {
+            color: #666;
+            font-size: 14px;
+        }
+        .summary {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 6px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .status-badge.pass {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status-badge.fail {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        #console {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 AI Portal 前端功能测试</h1>
+
+        <div class="test-controls">
+            <button id="runTests" onclick="runTests()">▶️ 运行测试</button>
+            <button id="clearResults" onclick="clearResults()">🗑️ 清除结果</button>
+        </div>
+
+        <div id="status" style="margin-bottom: 20px;">
+            <p>点击"运行测试"按钮开始测试前端功能...</p>
+        </div>
+
+        <div id="results"></div>
+
+        <div id="console"></div>
+    </div>
+
+    <script type="module">
+        import { runFrontendTests } from './src/tests/test_frontend.ts';
+
+        let testResults = [];
+
+        function logToConsole(message) {
+            const consoleEl = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            consoleEl.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function displayResult(result) {
+            const resultsEl = document.getElementById('results');
+            const resultEl = document.createElement('div');
+            resultEl.className = `test-result ${result.status === '通过' ? 'pass' : 'fail'}`;
+
+            const statusBadge = result.status === '通过'
+                ? '<span class="status-badge pass">✅ 通过</span>'
+                : '<span class="status-badge fail">❌ 失败</span>';
+
+            resultEl.innerHTML = `
+                <div class="test-name">${result.name} ${statusBadge}</div>
+                <div class="test-message">${result.message} (${result.duration.toFixed(2)}ms)</div>
+            `;
+
+            resultsEl.appendChild(resultEl);
+        }
+
+        function displaySummary(results) {
+            const total = results.length;
+            const passed = results.filter(r => r.status === '通过').length;
+            const failed = total - passed;
+            const passRate = total > 0 ? (passed / total) * 100 : 0;
+
+            const resultsEl = document.getElementById('results');
+            const summaryEl = document.createElement('div');
+            summaryEl.className = 'summary';
+            summaryEl.innerHTML = `
+                <h3>📊 测试结果汇总</h3>
+                <p><strong>总计:</strong> ${total}</p>
+                <p><strong>通过:</strong> ${passed}</p>
+                <p><strong>失败:</strong> ${failed}</p>
+                <p><strong>通过率:</strong> ${passRate.toFixed(1)}%</p>
+            `;
+            resultsEl.appendChild(summaryEl);
+        }
+
+        window.runTests = async function() {
+            const runBtn = document.getElementById('runTests');
+            const statusEl = document.getElementById('status');
+
+            runBtn.disabled = true;
+            statusEl.innerHTML = '<p>⏳ 测试运行中，请稍候...</p>';
+
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('console').innerHTML = '';
+
+            logToConsole('🧪 开始运行前端测试...');
+
+            try {
+                const results = await runFrontendTests();
+                testResults = results;
+
+                results.forEach(result => {
+                    displayResult(result);
+                    logToConsole(`${result.status === '通过' ? '✅' : '❌'} ${result.name}: ${result.message}`);
+                });
+
+                displaySummary(results);
+
+                const passed = results.filter(r => r.status === '通过').length;
+                const total = results.length;
+
+                if (passed === total) {
+                    statusEl.innerHTML = '<p style="color: green;">🎉 所有测试通过！</p>';
+                    logToConsole('🎉 所有测试通过！');
+                } else {
+                    statusEl.innerHTML = `<p style="color: orange;">⚠️ ${total - passed} 个测试失败</p>`;
+                    logToConsole(`⚠️ ${total - passed} 个测试失败`);
+                }
+
+            } catch (error) {
+                statusEl.innerHTML = `<p style="color: red;">❌ 测试运行出错: ${error.message}</p>`;
+                logToConsole(`❌ 错误: ${error.message}`);
+            } finally {
+                runBtn.disabled = false;
+            }
+        };
+
+        window.clearResults = function() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('console').innerHTML = '';
+            document.getElementById('status').innerHTML = '<p>点击"运行测试"按钮开始测试前端功能...</p>';
+        };
+    </script>
+</body>
+</html>
