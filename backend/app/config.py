@@ -43,9 +43,13 @@ class Settings(BaseSettings):
         "http://127.0.0.1:8000",
     ]
 
+    # Logging
+    log_level: str = os.getenv("LOG_LEVEL", "INFO")
+
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"  # 忽略额外的环境变量
 
 
 # Global settings instance

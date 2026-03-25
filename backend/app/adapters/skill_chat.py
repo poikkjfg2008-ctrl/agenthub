@@ -4,6 +4,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
+from .base import ExecutionAdapter
 from .opencode import OpenCodeAdapter
 from ..models import Message
 

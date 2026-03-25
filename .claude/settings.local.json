@@ -17,7 +17,29 @@
       "Bash(/home/yy/python312/bin/python -c \"import fastapi; print\\('FastAPI:', fastapi.__version__\\)\" 2>&1 || echo \"FastAPI not installed\")",
       "Bash(/home/yy/python312/bin/python -c \"import uvicorn; print\\('Uvicorn:', uvicorn.__version__\\)\" 2>&1 || echo \"Uvicorn not installed\")",
       "Bash(cd frontend && npm create vite@latest . -- --template react-ts)",
-      "Bash(chmod +x /home/yy/agenthub/scripts/start.sh /home/yy/agenthub/scripts/stop.sh)"
+      "Bash(chmod +x /home/yy/agenthub/scripts/start.sh /home/yy/agenthub/scripts/stop.sh)",
+      "Bash(/home/yy/python312/bin/python --version)",
+      "Bash(node --version && npm --version)",
+      "Bash(cd /home/yy/agenthub/backend && /home/yy/python312/bin/python -m pip install -r requirements.txt)",
+      "Bash(/home/yy/python312/bin/python -m pip install pydantic-settings)",
+      "Bash(cd /home/yy/agenthub && cp .env.example backend/.env)",
+      "Bash(cd /home/yy/agenthub/frontend && npm install)",
+      "Bash(sleep 3 && curl -s http://localhost:8000/api/health)",
+      "Bash(pkill -f \"uvicorn app.main:app\")",
+      "Bash(sleep 5 && curl -s http://localhost:8000/api/health)",
+      "Bash(sleep 8 && curl -s http://localhost:8000/api/health)",
+      "Bash(sleep 5 && curl -s http://localhost:5173 | head -n 5)",
+      "Bash(curl -s \"http://localhost:8000/api/auth/mock-login?emp_no=E10001\" -c /tmp/cookies.txt && echo \"✅ 模拟登录成功\")",
+      "Bash(curl -s http://localhost:8000/api/resources -b /tmp/cookies.txt | python3 -m json.tool | head -n 20)",
+      "Bash(curl -s http://localhost:8000/api/health | python3 -m json.tool)",
+      "Bash(curl -s http://localhost:8000/docs 2>&1 | head -n 3)",
+      "Bash(tail -n 20 /home/yy/agenthub/backend/logs/backend.log | grep -v \"^$\")",
+      "Bash(tail -n 15 /home/yy/agenthub/frontend/logs/frontend.log | grep -v \"^$\")",
+      "Bash(curl -s http://localhost:5173 | grep -o '<title>.*</title>')",
+      "Bash(grep -n \"from './api'\" /home/yy/agenthub/frontend/src/components/*.tsx 2>/dev/null || echo \"没有找到其他错误的导入\")",
+      "Bash(sleep 3 && curl -s http://localhost:5173 | grep -o '<title>.*</title>')",
+      "Bash(echo \"=== AI Portal 系统状态检查 ===\" && echo \"\" && echo \"1. 后端健康检查:\" && curl -s http://localhost:8000/api/health | python3 -m json.tool && echo \"\" && echo \"2. 前端页面标题:\" && curl -s http://localhost:5173 | grep -o '<title>.*</title>' && echo \"\" && echo \"3. API 文档可访问:\" && curl -s -o /dev/null -w \"HTTP状态码: %{http_code}\\\\n\" http://localhost:8000/docs && echo \"\" && echo \"4. 运行进程:\" && ps aux | grep -E \"uvicorn|vite\" | grep -v grep | wc -l && echo \"个服务进程在运行\")",
+      "Bash(chmod +x /home/yy/agenthub/backend/tests/run_backend_tests.sh)"
     ]
   }
 }
