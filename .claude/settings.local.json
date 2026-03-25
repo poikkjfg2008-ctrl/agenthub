@@ -47,7 +47,8 @@
       "Bash(curl -v \"http://localhost:8000/api/auth/mock-login?emp_no=E10001\" 2>&1 | grep -E \"\\(Set-Cookie|HTTP|Location\\)\")",
       "Bash(sleep 5 && curl -v \"http://localhost:8000/api/auth/mock-login?emp_no=E10001\" 2>&1 | grep -E \"\\(Set-Cookie|HTTP|Location\\)\" | head -5)",
       "Bash(sleep 3 && curl -v \"http://localhost:8000/api/auth/mock-login?emp_no=E10001\" 2>&1 | grep -E \"\\(Set-Cookie|HTTP|access_token\\)\" | head -5)",
-      "Bash(chmod +x /home/yy/agenthub/scripts/test.sh)"
+      "Bash(chmod +x /home/yy/agenthub/scripts/test.sh)",
+      "Bash(curl -s http://localhost:5173/index.test.html | head -20)"
     ]
   }
 }

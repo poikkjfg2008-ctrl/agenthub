@@ -189,3 +189,61 @@ INFO:     127.0.0.1:38460 - "GET /api/skills HTTP/1.1" 200 OK
 INFO:     127.0.0.1:38468 - "GET /api/resources HTTP/1.1" 401 Unauthorized
 {"timestamp": "2026-03-26 07:20:42,533", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "34f7de7b-7ad4-4625-9b36-df7ec4f85821", "emp_no": null, "cost_ms": 0}
 INFO:     127.0.0.1:50348 - "GET /api/health HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:21:40,920", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "573fb4db-aa88-4dc2-836a-61bea48a82f0", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:58578 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+{"timestamp": "2026-03-26 07:21:40,922", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "0f2705a7-b86b-4c5e-b705-6478f75007d2", "emp_no": null, "cost_ms": 1}
+INFO:     127.0.0.1:58594 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+{"timestamp": "2026-03-26 07:21:40,934", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "dcf14e57-0db0-40aa-876f-2e566f0af07f", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:58610 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:21:40,936", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "1a4bb0fb-c4ed-47d9-acd8-dc12f838ce60", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:58612 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:21:43,535", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "85357678-06db-4abf-99b6-bf115ed359d1", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:58628 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:21:47,733", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "5d4a3d4c-3979-46ed-8f36-a580b33c4c0e", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:58644 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+{"timestamp": "2026-03-26 07:21:47,733", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "9ba7421f-014b-4797-a52c-d66df688211c", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:58644 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+{"timestamp": "2026-03-26 07:21:47,738", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "53d7da64-b8b2-4b8d-9d56-5f24e78f271f", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:58654 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:21:47,740", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "d9dfaa57-392f-46da-90f0-e3e5d698732d", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:58668 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:22:08,058", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "51c2e71e-3747-4edd-8b6b-5e7518e7c943", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:36254 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+{"timestamp": "2026-03-26 07:22:08,059", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "9e45b603-7a94-4963-a528-cc04f86b2aa9", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:36262 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+{"timestamp": "2026-03-26 07:22:08,084", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "4f24bebd-001e-4368-bf18-22c54dff3b6e", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:36266 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:22:08,086", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "8b95d674-ab5e-47ec-bc87-caffb2f2f26a", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:36278 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:22:47,010", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "f2e4f8c3-775d-467a-8c97-6b36623cce72", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:49072 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+{"timestamp": "2026-03-26 07:22:47,011", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "eda21c8a-a027-4183-b7f0-37e344d164c6", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:49086 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+{"timestamp": "2026-03-26 07:22:47,018", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "a11c056c-ddc9-489d-9095-35b61c6918b1", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:49092 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:22:47,020", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "0ed7f267-4ed7-4674-ad93-f74caf42acf3", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:49096 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:22:56,853", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "ee69a7a8-3ad5-4c4a-be88-1b4b5ef7aee3", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:55170 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:22:57,072", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "d2b33e72-e1aa-47e8-8cf4-4b71da52fac1", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:55182 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:22:57,256", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "f06d8019-2129-4542-8c46-6af25975bda1", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:55192 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:22:57,440", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "b0c22b21-91a5-48bd-9841-531f866ede19", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:55196 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:23:03,245", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "ef010f53-b23f-4325-bd9c-789e88f9002e", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:50442 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+{"timestamp": "2026-03-26 07:23:03,246", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "77ff8c20-0880-4120-8f8b-c7a61294e538", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:50446 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+{"timestamp": "2026-03-26 07:23:03,254", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "947e51c9-2bfc-474b-8b79-a75f16d4a5ba", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:50450 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:23:03,257", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "455bbfef-003e-4e1e-9bcf-aa7f225f7360", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:50458 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:25:38,061", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "74ecd4e3-0ecb-4fbe-b4f9-688d1959dcc2", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:36080 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+{"timestamp": "2026-03-26 07:25:38,061", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "0feda654-c397-43bc-95a1-5fbd564cab6c", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:36096 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+{"timestamp": "2026-03-26 07:25:38,085", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "5192b124-e3e4-4124-8107-fd8c03bb71a1", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:36110 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
+{"timestamp": "2026-03-26 07:25:38,097", "level": "INFO", "logger": "app.logging.middleware", "message": "Request completed", "module": "middleware", "function": "dispatch", "line": 125, "trace_id": "b7f7ef79-a93c-4255-a04e-cab3570f8b64", "emp_no": null, "cost_ms": 0}
+INFO:     127.0.0.1:36124 - "GET /api/auth/mock-login?emp_no=E10001 HTTP/1.1" 200 OK
