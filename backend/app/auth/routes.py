@@ -1,7 +1,7 @@
 """Authentication routes - Mock SSO endpoints"""
 
 from fastapi import APIRouter, HTTPException, status, Response
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from typing import Annotated
 from pydantic import BaseModel
 
@@ -28,7 +28,7 @@ class UserInfoResponse(BaseModel):
 
 
 @router.get("/mock-login")
-async def mock_login(emp_no: str, response: Response):
+async def mock_login(emp_no: str):
     """
     Mock SSO login endpoint
     In production, replace with real SSO flow
@@ -45,7 +45,17 @@ async def mock_login(emp_no: str, response: Response):
     # Generate JWT token
     token = auth_service.generate_token(user)
 
-    # Set HTTP-only cookie
+    # Return JSON response and set HTTP-only cookie
+    response = JSONResponse({
+        "message": "Login successful",
+        "redirect": "/",
+        "user": {
+            "emp_no": user.emp_no,
+            "name": user.name,
+            "dept": user.dept
+        }
+    })
+
     response.set_cookie(
         key="access_token",
         value=token,
@@ -55,16 +65,7 @@ async def mock_login(emp_no: str, response: Response):
         max_age=86400  # 24 hours
     )
 
-    # Return JSON response with redirect info
-    return {
-        "message": "Login successful",
-        "redirect": "/",
-        "user": {
-            "emp_no": user.emp_no,
-            "name": user.name,
-            "dept": user.dept
-        }
-    }
+    return response
 
 
 @router.get("/callback")
