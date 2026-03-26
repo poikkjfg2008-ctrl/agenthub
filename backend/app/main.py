@@ -4,7 +4,7 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import List
 from datetime import datetime
-from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -241,7 +241,7 @@ async def launch_resource(resource_id: str, user: CurrentUser):
 
 
 @app.get("/api/sessions")
-async def list_sessions(user: CurrentUser, limit: int = 50):
+async def list_sessions(user: CurrentUser, limit: int = Query(50, ge=1, le=100)):
     """
     List user's native/skill sessions
     """
@@ -415,7 +415,7 @@ async def list_skills(user: CurrentUser):
 
 
 @app.get("/api/launches")
-async def list_launches(user: CurrentUser, limit: int = 50):
+async def list_launches(user: CurrentUser, limit: int = Query(50, ge=1, le=100)):
     """
     List user's WebSDK launches
     """
@@ -435,7 +435,10 @@ async def serve_sdk_host():
             media_type="text/html",
             headers={"Cache-Control": "no-cache"}
         )
-    return {"error": "sdk-host.html not found"}, 404
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="sdk-host.html not found"
+    )
 
 
 # Serve frontend (for development/prod)
