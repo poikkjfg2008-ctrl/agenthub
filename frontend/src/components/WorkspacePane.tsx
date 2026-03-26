@@ -45,7 +45,8 @@ export function WorkspacePane({ launchId }: WorkspacePaneProps) {
       },
     };
 
-    iframeRef.current.contentWindow?.postMessage(message, '*');
+    const sdkHostOrigin = new URL('/sdk-host.html', window.location.origin).origin;
+    iframeRef.current.contentWindow?.postMessage(message, sdkHostOrigin);
   };
 
   useEffect(() => {

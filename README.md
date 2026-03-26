@@ -95,6 +95,36 @@ OpenCode  OpenWork        WebSDK Apps
 
 ---
 
+
+
+## WebSDK 宿主页安全配置
+
+为避免 `postMessage(..., '*')` 与任意脚本域名带来的风险，`public/sdk-host.html` 增加了来源与脚本域名白名单校验：
+
+- **消息来源白名单**：仅当 `event.origin` 在 `allowedMessageOrigins` 中，才处理 `type: "init"`。
+- **脚本 URL 校验**：
+  - 默认要求 `https:`；
+  - 开发环境允许 `http://localhost` / `http://127.0.0.1`；
+  - `scriptUrl` 的主机名必须在 `allowedScriptHosts` 白名单内。
+- **ready 消息**：宿主页对父页面发送 `{ type: "ready" }` 时使用明确 `targetOrigin`，不再使用 `*`。
+
+可通过在宿主页提前注入全局配置覆盖默认值：
+
+```html
+<script>
+  window.SDK_HOST_SECURITY = {
+    allowedMessageOrigins: [
+      'https://portal.example.com'
+    ],
+    allowedScriptHosts: [
+      'sdk.example.com'
+    ]
+  };
+</script>
+```
+
+> 建议在生产环境只保留实际 Portal 域名与 SDK 域名，避免后续接入时退化回 `*` 或宽松规则。
+
 ## 仓库结构（核心）
 
 ```text

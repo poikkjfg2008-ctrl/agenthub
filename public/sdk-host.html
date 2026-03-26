@@ -61,12 +61,94 @@
         let sdkScript = null;
         let sdkInstance = null;
 
-        window.addEventListener('message', async (event) => {
-            const { type, config } = event.data;
+        const DEFAULT_ALLOWED_MESSAGE_ORIGINS = [
+            window.location.origin,
+            'http://localhost:5173',
+            'http://127.0.0.1:5173'
+        ];
+        const DEFAULT_ALLOWED_SCRIPT_HOSTS = [
+            window.location.hostname,
+            'localhost',
+            '127.0.0.1'
+        ];
+        const LOCAL_DEV_SCRIPT_ORIGINS = new Set([
+            'http://localhost',
+            'http://127.0.0.1'
+        ]);
 
-            if (type === 'init' && config) {
-                await initWebSDK(config);
+        const hostSecurityConfig = window.SDK_HOST_SECURITY || {};
+        const allowedMessageOrigins = new Set(
+            hostSecurityConfig.allowedMessageOrigins || DEFAULT_ALLOWED_MESSAGE_ORIGINS
+        );
+        const allowedScriptHosts = new Set(
+            hostSecurityConfig.allowedScriptHosts || DEFAULT_ALLOWED_SCRIPT_HOSTS
+        );
+
+        function isAllowedMessageOrigin(origin) {
+            return allowedMessageOrigins.has(origin);
+        }
+
+        function validateScriptUrl(scriptUrl) {
+            let parsed;
+
+            try {
+                parsed = new URL(scriptUrl);
+            } catch (_error) {
+                return { valid: false, reason: 'scriptUrl 不是合法 URL' };
             }
+
+            const isHttps = parsed.protocol === 'https:';
+            const isLocalDevHttp = parsed.protocol === 'http:'
+                && LOCAL_DEV_SCRIPT_ORIGINS.has(parsed.origin);
+
+            if (!isHttps && !isLocalDevHttp) {
+                return {
+                    valid: false,
+                    reason: 'scriptUrl 必须使用 https，开发环境仅允许 http://localhost 或 http://127.0.0.1'
+                };
+            }
+
+            if (!allowedScriptHosts.has(parsed.hostname)) {
+                return {
+                    valid: false,
+                    reason: `scriptUrl 主机 ${parsed.hostname} 不在允许名单中`
+                };
+            }
+
+            return { valid: true, normalizedUrl: parsed.toString() };
+        }
+
+        function getParentOrigin() {
+            if (!document.referrer) {
+                return window.location.origin;
+            }
+
+            try {
+                return new URL(document.referrer).origin;
+            } catch (_error) {
+                return window.location.origin;
+            }
+        }
+
+        window.addEventListener('message', async (event) => {
+            if (!event.data || event.data.type !== 'init' || !event.data.config) {
+                return;
+            }
+
+            if (!isAllowedMessageOrigin(event.origin)) {
+                console.warn('[sdk-host] blocked init message from origin:', event.origin);
+                return;
+            }
+
+            const { config } = event.data;
+            const validation = validateScriptUrl(config.scriptUrl);
+            if (!validation.valid) {
+                showError(validation.reason);
+                return;
+            }
+
+            config.scriptUrl = validation.normalizedUrl;
+            await initWebSDK(config);
         });
 
         async function initWebSDK(config) {
@@ -124,7 +206,10 @@
             `;
         }
 
-        window.parent.postMessage({ type: 'ready' }, '*');
+        const parentOrigin = getParentOrigin();
+        if (isAllowedMessageOrigin(parentOrigin)) {
+            window.parent.postMessage({ type: 'ready' }, parentOrigin);
+        }
     </script>
 </body>
 </html>
