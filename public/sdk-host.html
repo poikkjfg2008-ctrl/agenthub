@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSDK Host</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        #websdk-container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .error {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            flex-direction: column;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .error h2 {
+            color: #e53e3e;
+            margin-bottom: 10px;
+        }
+
+        .error p {
+            color: #666;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div id="websdk-container">
+        <div class="loading">加载中...</div>
+    </div>
+
+    <script>
+        let sdkScript = null;
+        let sdkInstance = null;
+
+        window.addEventListener('message', async (event) => {
+            const { type, config } = event.data;
+
+            if (type === 'init' && config) {
+                await initWebSDK(config);
+            }
+        });
+
+        async function initWebSDK(config) {
+            try {
+                console.log('Initializing WebSDK with config:', config);
+
+                if (!config.scriptUrl) {
+                    showError('缺少 scriptUrl 配置');
+                    return;
+                }
+
+                if (!sdkScript || sdkScript.src !== config.scriptUrl) {
+                    console.log('Loading WebSDK script from:', config.scriptUrl);
+                    sdkScript = document.createElement('script');
+                    sdkScript.src = config.scriptUrl;
+                    sdkScript.onload = () => {
+                        console.log('WebSDK script loaded successfully');
+                        initializeSDK(config);
+                    };
+                    sdkScript.onerror = () => {
+                        console.error('WebSDK script failed to load');
+                        showError('WebSDK 脚本加载失败');
+                    };
+                    document.head.appendChild(sdkScript);
+                } else {
+                    console.log('WebSDK script already loaded, initializing');
+                    initializeSDK(config);
+                }
+            } catch (error) {
+                console.error('Error initializing WebSDK:', error);
+                showError('初始化失败: ' + error.message);
+            }
+        }
+
+        function initializeSDK(config) {
+            try {
+                console.log('Creating WebSDK instance with config:', config);
+                const container = document.getElementById('websdk-container');
+
+                container.innerHTML = '';
+
+                const sdkContainer = document.createElement('div');
+                sdkContainer.id = 'websdk-embed';
+                sdkContainer.style.width = '100%';
+                sdkContainer.style.height = '100%';
+                container.appendChild(sdkContainer);
+
+                if (window.HiagentWebSDK && window.HiagentWebSDK.WebLiteClient) {
+                    console.log('Creating HiagentWebSDK.WebLiteClient instance');
+                    sdkInstance = new window.HiagentWebSDK.WebLiteClient({
+                        appKey: config.appKey,
+                        baseUrl: config.baseUrl,
+                        token: config.launchToken,
+                        user: config.userContext,
+                        container: '#websdk-embed'
+                    });
+                    console.log('WebSDK instance created successfully');
+                } else {
+                    console.error('HiagentWebSDK.WebLiteClient not found. Available:', Object.keys(window.HiagentWebSDK || {}));
+                    showError('HiagentWebSDK.WebLiteClient 未找到');
+                }
+            } catch (error) {
+                console.error('Error creating WebSDK instance:', error);
+                showError('创建 WebSDK 实例失败: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            const container = document.getElementById('websdk-container');
+            container.innerHTML = `
+                <div class="error">
+                    <h2>加载失败</h2>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        window.parent.postMessage({ type: 'ready' }, '*');
+    </script>
+</body>
+</html>

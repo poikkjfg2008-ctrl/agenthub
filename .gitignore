@@ -1,0 +1,22 @@
+# Dependencies
+frontend/node_modules/
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Large files
+ahub.pdf
+
+# Build outputs
+frontend/dist/
+dist/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

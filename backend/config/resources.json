@@ -1,0 +1,106 @@
+[
+  {
+    "id": "general-chat",
+    "name": "通用助手",
+    "type": "direct_chat",
+    "launch_mode": "native",
+    "group": "基础对话",
+    "description": "通用问答与任务协助，可以回答各种问题并提供帮助",
+    "enabled": true,
+    "tags": ["chat", "general"],
+    "config": {
+      "workspace_id": "default",
+      "model": "default"
+    }
+  },
+  {
+    "id": "skill-coding",
+    "name": "编程助手",
+    "type": "skill_chat",
+    "launch_mode": "native",
+    "group": "技能助手",
+    "description": "编程开发、代码审查、调试优化等开发任务",
+    "enabled": true,
+    "tags": ["coding", "development"],
+    "config": {
+      "skill_name": "coding",
+      "starter_prompts": ["请帮我审查这段代码", "帮我优化这个函数", "解释这段代码的作用"],
+      "workspace_id": "default"
+    }
+  },
+  {
+    "id": "skill-writing",
+    "name": "写作助手",
+    "type": "skill_chat",
+    "launch_mode": "native",
+    "group": "技能助手",
+    "description": "文档撰写、邮件起草、内容创作等写作任务",
+    "enabled": true,
+    "tags": ["writing", "content"],
+    "config": {
+      "skill_name": "writing",
+      "starter_prompts": ["帮我写一封邮件", "润色这段文字", "写一个项目总结"],
+      "workspace_id": "default"
+    }
+  },
+  {
+    "id": "skill-data-analysis",
+    "name": "数据分析助手",
+    "type": "skill_chat",
+    "launch_mode": "native",
+    "group": "技能助手",
+    "description": "数据分析、图表解读、统计建模等分析任务",
+    "enabled": true,
+    "tags": ["data", "analysis"],
+    "config": {
+      "skill_name": "data_analysis",
+      "starter_prompts": ["分析这组数据", "解释这个统计结果", "帮我生成数据分析报告"],
+      "workspace_id": "default"
+    }
+  },
+  {
+    "id": "kb-policy",
+    "name": "制度知识库",
+    "type": "kb_websdk",
+    "launch_mode": "websdk",
+    "group": "知识库",
+    "description": "公司制度与流程问答，快速查找企业政策和规范",
+    "enabled": true,
+    "tags": ["kb", "policy"],
+    "config": {
+      "script_url": "http://127.0.0.1:4096/resources/product/llm/public/sdk/embedLite.js",
+      "app_key": "kb_policy_key",
+      "base_url": "http://127.0.0.1:4096/kb/chat"
+    }
+  },
+  {
+    "id": "kb-tech",
+    "name": "技术文档库",
+    "type": "kb_websdk",
+    "launch_mode": "websdk",
+    "group": "知识库",
+    "description": "技术文档、API参考、开发指南等技术资料查询",
+    "enabled": true,
+    "tags": ["kb", "tech"],
+    "config": {
+      "script_url": "http://127.0.0.1:4096/resources/product/llm/public/sdk/embedLite.js",
+      "app_key": "kb_tech_key",
+      "base_url": "http://127.0.0.1:4096/kb/chat"
+    }
+  },
+  {
+    "id": "agent-report",
+    "name": "报表生成器",
+    "type": "agent_websdk",
+    "launch_mode": "websdk",
+    "group": "智能应用",
+    "description": "自动化报表生成与数据分析应用",
+    "enabled": true,
+    "tags": ["agent", "report"],
+    "config": {
+      "script_url": "http://127.0.0.1:4096/resources/product/llm/public/sdk/embedLite.js",
+      "app_key": "agent_report_key",
+      "base_url": "http://127.0.0.1:4096/agent/chat"
+    }
+  }
+]
