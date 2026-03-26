@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 DEFAULTS = {
     "OPENCODE_BASE_URL": "http://127.0.0.1:4096",
     "OPENWORK_BASE_URL": "http://127.0.0.1:8787",
+    "RESOURCES_PATH": "config/resources.json",
 }
 
 
@@ -71,6 +72,18 @@ def collect_endpoints(resources_path: Path, env_values: Dict[str, str]) -> List[
     return endpoints
 
 
+def resolve_resources_path(repo_root: Path, env_values: Dict[str, str]) -> Path:
+    backend_root = repo_root / "backend"
+    raw_path = env_values.get("RESOURCES_PATH", DEFAULTS["RESOURCES_PATH"]).strip()
+    normalized_path = raw_path.strip('"').strip("'")
+    resources_path = Path(normalized_path).expanduser()
+
+    if resources_path.is_absolute():
+        return resources_path
+
+    return backend_root / resources_path
+
+
 def dedupe_endpoints(endpoints: Iterable[Tuple[str, str]]) -> List[Tuple[str, str]]:
     seen: Set[str] = set()
     result: List[Tuple[str, str]] = []
@@ -84,9 +97,8 @@ def dedupe_endpoints(endpoints: Iterable[Tuple[str, str]]) -> List[Tuple[str, st
 
 def run_preflight(repo_root: Path, check_network: bool) -> int:
     env_path = repo_root / "backend" / ".env"
-    resources_path = repo_root / "backend" / "config" / "resources.json"
-
     env_values = parse_env(env_path)
+    resources_path = resolve_resources_path(repo_root, env_values)
     endpoints = dedupe_endpoints(collect_endpoints(resources_path, env_values))
 
     print("🔍 启动前置检查（OpenCode/OpenWork/WebSDK）")

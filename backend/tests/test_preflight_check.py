@@ -39,3 +39,25 @@ def test_preflight_with_custom_repo_root_should_pass():
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "resources 文件" in result.stdout
+
+
+def test_preflight_should_use_resources_path_from_env(tmp_path):
+    backend_dir = tmp_path / "backend"
+    custom_resources_dir = backend_dir / "custom"
+    backend_dir.mkdir()
+    custom_resources_dir.mkdir()
+
+    (backend_dir / ".env").write_text("RESOURCES_PATH=custom/resources.json\n", encoding="utf-8")
+    (custom_resources_dir / "resources.json").write_text("[]", encoding="utf-8")
+
+    result = run_command(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--no-network",
+            "--repo-root",
+            str(tmp_path),
+        ]
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert str(custom_resources_dir / "resources.json") in result.stdout
