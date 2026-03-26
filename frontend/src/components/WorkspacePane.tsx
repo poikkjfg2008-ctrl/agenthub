@@ -41,6 +41,7 @@ export function WorkspacePane({ launchId }: WorkspacePaneProps) {
         launchToken: config.launch_token,
         userContext: config.user_context,
         baseUrl: config.base_url,
+        scriptUrl: config.script_url,
       },
     };
 

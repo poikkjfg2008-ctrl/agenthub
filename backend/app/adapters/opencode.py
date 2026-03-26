@@ -54,35 +54,28 @@ class OpenCodeAdapter(ExecutionAdapter):
         """
         client = await self._get_client()
 
-        # Prepare session metadata
-        metadata = {
-            "portal_resource_id": resource_id,
-            "portal_emp_no": user_context.get("emp_no", "unknown"),
-            "portal_user_name": user_context.get("name", "unknown"),
-            "created_at": datetime.utcnow().isoformat()
-        }
-
-        # Add skill-specific metadata if present
-        if "skill_name" in config:
-            metadata["skill_name"] = config["skill_name"]
+        title = config.get("title") or config.get("name") or resource_id
 
         try:
             response = await client.post(
                 "/session",
-                json={
-                    "metadata": metadata,
-                    "workspace": config.get("workspace_id", "default")
-                }
+                json={"title": title}
             )
             response.raise_for_status()
 
             data = response.json()
             session_id = data.get("id")
+            if not session_id:
+                raise ValueError("OpenCode create_session response missing 'id'")
 
-            logger.info(f"Created OpenCode session: {session_id}")
+            logger.info(
+                "Created OpenCode session %s for emp_no=%s",
+                session_id,
+                user_context.get("emp_no", "unknown")
+            )
             return session_id
 
-        except httpx.HTTPError as e:
+        except (httpx.HTTPError, ValueError) as e:
             logger.error(f"Failed to create OpenCode session: {e}")
             raise
 
@@ -90,7 +83,8 @@ class OpenCodeAdapter(ExecutionAdapter):
         self,
         session_id: str,
         message: str,
-        trace_id: Optional[str] = None
+        trace_id: Optional[str] = None,
+        system_prompt: Optional[str] = None
     ) -> str:
         """
         Send a message to OpenCode session
@@ -98,22 +92,26 @@ class OpenCodeAdapter(ExecutionAdapter):
         """
         client = await self._get_client()
 
-        # Prepare headers with trace ID
         headers = {}
         if trace_id:
             headers["X-Trace-ID"] = trace_id
 
+        payload: Dict[str, Any] = {
+            "parts": [{"type": "text", "text": message}]
+        }
+        if system_prompt:
+            payload["system"] = system_prompt
+
         try:
-            # Send message via async prompt API
             response = await client.post(
-                f"/session/{session_id}/prompt_async",
-                json={"text": message},
+                f"/session/{session_id}/message",
+                json=payload,
                 headers=headers
             )
             response.raise_for_status()
 
             data = response.json()
-            assistant_message = data.get("text", "")
+            assistant_message = self._extract_text_from_parts(data.get("parts", []))
 
             logger.info(f"Sent message to session {session_id}, trace_id={trace_id}")
             return assistant_message
@@ -132,7 +130,6 @@ class OpenCodeAdapter(ExecutionAdapter):
         """
         client = await self._get_client()
 
-        # Prepare headers with trace ID
         headers = {}
         if trace_id:
             headers["X-Trace-ID"] = trace_id
@@ -144,15 +141,18 @@ class OpenCodeAdapter(ExecutionAdapter):
             )
             response.raise_for_status()
 
-            data = response.json()
-            messages = []
+            payload = response.json()
+            raw_messages = payload if isinstance(payload, list) else []
+            messages: List[Message] = []
 
-            for msg in data.get("messages", []):
-                messages.append(Message(
-                    role=msg.get("role", "user"),
-                    text=msg.get("text", ""),
-                    timestamp=datetime.fromisoformat(msg["timestamp"]) if msg.get("timestamp") else None
-                ))
+            for msg in raw_messages:
+                info = msg.get("info", {})
+                role = info.get("role", "assistant")
+                timestamp_raw = info.get("createdAt")
+                timestamp = self._parse_iso_datetime(timestamp_raw)
+                text = self._extract_text_from_parts(msg.get("parts", []))
+
+                messages.append(Message(role=role, text=text, timestamp=timestamp))
 
             logger.info(f"Retrieved {len(messages)} messages from session {session_id}")
             return messages
@@ -171,7 +171,6 @@ class OpenCodeAdapter(ExecutionAdapter):
         """
         client = await self._get_client()
 
-        # Prepare headers with trace ID
         headers = {}
         if trace_id:
             headers["X-Trace-ID"] = trace_id
@@ -189,3 +188,25 @@ class OpenCodeAdapter(ExecutionAdapter):
         except httpx.HTTPError as e:
             logger.error(f"Failed to close session {session_id}: {e}")
             return False
+
+    @staticmethod
+    def _extract_text_from_parts(parts: List[Dict[str, Any]]) -> str:
+        """Extract readable text from OpenCode message parts."""
+        text_chunks = []
+        for part in parts:
+            if part.get("type") == "text" and part.get("text"):
+                text_chunks.append(part["text"])
+        return "\n".join(text_chunks)
+
+    @staticmethod
+    def _parse_iso_datetime(value: Optional[str]) -> Optional[datetime]:
+        """Parse ISO-8601 datetime string into datetime object."""
+        if not value:
+            return None
+
+        try:
+            normalized = value.replace("Z", "+00:00")
+            return datetime.fromisoformat(normalized)
+        except ValueError:
+            logger.warning("Failed to parse message timestamp: %s", value)
+            return None

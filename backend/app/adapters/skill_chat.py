@@ -2,7 +2,6 @@
 
 import logging
 from typing import List, Dict, Any, Optional
-from datetime import datetime
 
 from .base import ExecutionAdapter
 from .opencode import OpenCodeAdapter
@@ -20,6 +19,7 @@ class SkillChatAdapter(ExecutionAdapter):
 
     def __init__(self):
         self.opencode_adapter = OpenCodeAdapter()
+        self._session_skill_map: Dict[str, str] = {}
 
     async def create_session(
         self,
@@ -29,20 +29,18 @@ class SkillChatAdapter(ExecutionAdapter):
     ) -> str:
         """
         Create a new skill chat session
-        Includes skill_name in metadata
+        Stores skill_name for later skill-mode prompt injection
         """
-        # Add skill-specific metadata to config
-        skill_config = config.copy()
-        skill_config["skill_name"] = config.get("skill_name", resource_id)
+        skill_name = config.get("skill_name", resource_id)
 
-        # Create session via OpenCode adapter
         session_id = await self.opencode_adapter.create_session(
             resource_id,
             user_context,
-            skill_config
+            config
         )
+        self._session_skill_map[session_id] = skill_name
 
-        logger.info(f"Created skill chat session: {session_id} for skill: {config.get('skill_name')}")
+        logger.info(f"Created skill chat session: {session_id} for skill: {skill_name}")
         return session_id
 
     async def send_message(
@@ -53,9 +51,17 @@ class SkillChatAdapter(ExecutionAdapter):
     ) -> str:
         """
         Send a message to skill chat session
-        Delegates to OpenCode adapter
+        Injects system prompt to enforce skill mode behavior
         """
-        return await self.opencode_adapter.send_message(session_id, message, trace_id)
+        skill_name = self._session_skill_map.get(session_id, "unknown_skill")
+        system_prompt = self._build_skill_mode_system_prompt(skill_name)
+
+        return await self.opencode_adapter.send_message(
+            session_id=session_id,
+            message=message,
+            trace_id=trace_id,
+            system_prompt=system_prompt,
+        )
 
     async def get_messages(
         self,
@@ -77,8 +83,19 @@ class SkillChatAdapter(ExecutionAdapter):
         Close skill chat session
         Delegates to OpenCode adapter
         """
+        self._session_skill_map.pop(session_id, None)
         return await self.opencode_adapter.close_session(session_id, trace_id)
 
     async def close(self):
         """Close underlying adapter"""
+        self._session_skill_map.clear()
         await self.opencode_adapter.close()
+
+    @staticmethod
+    def _build_skill_mode_system_prompt(skill_name: str) -> str:
+        return (
+            f'You are in skill mode "{skill_name}".\n'
+            "Treat this skill as the primary workflow for this session.\n"
+            f'Use the native skill tool to load "{skill_name}" when needed.\n'
+            "Do not silently switch to another skill."
+        )

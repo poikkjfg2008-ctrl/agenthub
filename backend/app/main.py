@@ -3,7 +3,8 @@
 import uuid
 from contextlib import asynccontextmanager
 from typing import List
-from fastapi import FastAPI, Depends, HTTPException, status
+from datetime import datetime
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -283,7 +284,8 @@ async def get_session_messages(
 @app.post("/api/sessions/{portal_session_id}/messages")
 async def send_session_message(
     portal_session_id: str,
-    request: SendMessageRequest,
+    body: SendMessageRequest,
+    request: Request,
     user: CurrentUser
 ):
     """
@@ -308,20 +310,24 @@ async def send_session_message(
     adapter_name = session.metadata.get("adapter", "opencode")
 
     # Send message via adapter
-    trace_id = getattr(request.state, "trace_id", None) if hasattr(request, "state") else None
+    trace_context = getattr(request.state, "trace_context", None)
+    trace_id = getattr(trace_context, "trace_id", None)
 
     if adapter_name == "skill_chat":
         response = await skill_chat_adapter.send_message(
             session.engine_session_id,
-            request.text,
+            body.text,
             trace_id
         )
     else:
         response = await opencode_adapter.send_message(
             session.engine_session_id,
-            request.text,
+            body.text,
             trace_id
         )
+
+    session.updated_at = datetime.utcnow()
+    await storage.save_session(session)
 
     return {"response": response}
 

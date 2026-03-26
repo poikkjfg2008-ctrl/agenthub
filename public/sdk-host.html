@@ -61,11 +61,7 @@
         let sdkScript = null;
         let sdkInstance = null;
 
-        // Listen for messages from parent
         window.addEventListener('message', async (event) => {
-            // Validate origin in production
-            // if (event.origin !== YOUR_ALLOWED_ORIGIN) return;
-
             const { type, config } = event.data;
 
             if (type === 'init' && config) {
@@ -74,15 +70,17 @@
         });
 
         async function initWebSDK(config) {
-            const container = document.getElementById('websdk-container');
-
             try {
-                // Load WebSDK script
-                if (!sdkScript) {
+                if (!config.scriptUrl) {
+                    showError('缺少 scriptUrl 配置');
+                    return;
+                }
+
+                if (!sdkScript || sdkScript.src !== config.scriptUrl) {
                     sdkScript = document.createElement('script');
-                    sdkScript.src = config.baseUrl + '/resources/product/llm/public/sdk/embedLite.js';
+                    sdkScript.src = config.scriptUrl;
                     sdkScript.onload = () => initializeSDK(config);
-                    sdkScript.onerror = () => showError('WebSDK 加载失败');
+                    sdkScript.onerror = () => showError('WebSDK 脚本加载失败');
                     document.head.appendChild(sdkScript);
                 } else {
                     initializeSDK(config);
@@ -95,27 +93,24 @@
         function initializeSDK(config) {
             const container = document.getElementById('websdk-container');
 
-            // Clear loading message
             container.innerHTML = '';
 
-            // Create WebSDK container
             const sdkContainer = document.createElement('div');
             sdkContainer.id = 'websdk-embed';
             sdkContainer.style.width = '100%';
             sdkContainer.style.height = '100%';
             container.appendChild(sdkContainer);
 
-            // Initialize WebSDK (adjust based on actual WebSDK API)
-            if (window.WebSDK) {
-                sdkInstance = new window.WebSDK({
-                    container: '#websdk-embed',
+            if (window.HiagentWebSDK && window.HiagentWebSDK.WebLiteClient) {
+                sdkInstance = new window.HiagentWebSDK.WebLiteClient({
                     appKey: config.appKey,
+                    baseUrl: config.baseUrl,
                     token: config.launchToken,
                     user: config.userContext,
-                    baseUrl: config.baseUrl,
+                    container: '#websdk-embed'
                 });
             } else {
-                showError('WebSDK 未正确加载');
+                showError('HiagentWebSDK.WebLiteClient 未找到');
             }
         }
 
@@ -129,7 +124,6 @@
             `;
         }
 
-        // Notify parent that iframe is ready
         window.parent.postMessage({ type: 'ready' }, '*');
     </script>
 </body>
