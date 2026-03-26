@@ -1,7 +1,8 @@
 """Authentication dependencies for FastAPI routes"""
 
 from typing import Annotated
-from fastapi import Cookie, Depends
+from fastapi import Cookie, Depends, HTTPException, status
+from ..config import settings
 from .service import auth_service
 from ..models import UserCtx
 
@@ -14,11 +15,21 @@ async def get_current_user(
     Raises HTTPException if not authenticated
     """
     if not access_token:
-        return auth_service.create_mock_user("E10001")
+        if settings.auth_mock_fallback_enabled:
+            return auth_service.create_mock_user("E10001")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
 
     user = auth_service.verify_token(access_token)
     if not user:
-        return auth_service.create_mock_user("E10001")
+        if settings.auth_mock_fallback_enabled:
+            return auth_service.create_mock_user("E10001")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+        )
 
     return user
 
@@ -31,11 +42,15 @@ async def get_optional_user(
     Returns None if not authenticated
     """
     if not access_token:
-        return auth_service.create_mock_user("E10001")
+        if settings.auth_mock_fallback_enabled:
+            return auth_service.create_mock_user("E10001")
+        return None
 
     user = auth_service.verify_token(access_token)
     if not user:
-        return auth_service.create_mock_user("E10001")
+        if settings.auth_mock_fallback_enabled:
+            return auth_service.create_mock_user("E10001")
+        return None
 
     return user
 

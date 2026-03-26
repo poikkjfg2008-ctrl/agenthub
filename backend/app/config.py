@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     jwt_secret: str = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
     jwt_algorithm: str = "HS256"
     jwt_expiration_hours: int = 24
+    auth_mock_fallback_enabled: bool = (
+        os.getenv("AUTH_MOCK_FALLBACK_ENABLED", "false").lower() == "true"
+    )
 
     # OpenCode
     opencode_base_url: str = os.getenv("OPENCODE_BASE_URL", "http://127.0.0.1:4096")
