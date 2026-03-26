@@ -1,20 +1,20 @@
 /** Main application component */
 
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { MessageSquare, BookOpen, Bot, Home, User, LogOut } from 'lucide-react';
 import { resourceApi, authApi } from './api';
 import type { Resource, UserCtx } from './types';
 import { ResourceCard } from './components/ResourceCard';
 import { ChatInterface } from './components/ChatInterface';
 import { SessionSidebar } from './components/SessionSidebar';
+import { WorkspacePane } from './components/WorkspacePane';
 
 function App() {
   const [user, setUser] = useState<UserCtx | null>(null);
   const [resourcesGrouped, setResourcesGrouped] = useState<Record<string, Resource[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     checkAuth();
@@ -171,7 +171,7 @@ function App() {
                   onNewChat={() => navigate('/')}
                 />
                 <div className="flex-1 bg-white rounded-lg shadow overflow-hidden">
-                  <ChatInterface sessionId={searchParams.get('sessionId') || ''} />
+                  <ChatRoutePage />
                 </div>
               </div>
             }
@@ -181,7 +181,7 @@ function App() {
             path="/launch/:launchId"
             element={
               <div className="h-[calc(100vh-8rem)] bg-white rounded-lg shadow overflow-hidden">
-                <WorkspacePane launchId={searchParams.get('launchId') || ''} />
+                <LaunchRoutePage />
               </div>
             }
           />
@@ -189,6 +189,19 @@ function App() {
       </main>
     </div>
   );
+}
+
+
+function ChatRoutePage() {
+  const { sessionId } = useParams();
+
+  return <ChatInterface sessionId={sessionId || ''} />;
+}
+
+function LaunchRoutePage() {
+  const { launchId } = useParams();
+
+  return <WorkspacePane launchId={launchId || ''} />;
 }
 
 function AppWithRouter() {
