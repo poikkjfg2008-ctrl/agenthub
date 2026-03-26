@@ -31,9 +31,14 @@ function App() {
       const response = await authApi.getMe();
       setUser(response.data);
     } catch (error) {
-      console.log('Not authenticated');
-      // Redirect to mock login
-      window.location.href = '/api/auth/mock-login?emp_no=E10001';
+      console.log('Not authenticated, trying mock login...');
+      try {
+        await authApi.mockLogin('E10001');
+        const response = await authApi.getMe();
+        setUser(response.data);
+      } catch (loginError) {
+        console.error('Mock login failed:', loginError);
+      }
     } finally {
       setIsLoading(false);
     }
