@@ -91,3 +91,11 @@ cd backend
 - 接真实 SSO：替换 `auth/service.py` 中 mock 逻辑，保持 Cookie 协议不变。
 - WebSDK 安全票据：将随机 `launch_token` 升级为可验签 JWT/HMAC。
 - OpenWork 技能安装状态：可从“单 skill 查询”改为“list 后本地匹配”。
+
+
+---
+
+## 7. 补充文档
+
+- 启动前置条件：`PRESTART_CONDITIONS.md`
+- WebSDK 嵌入与配置：`WEBSDK_EMBEDDING_GUIDE.md`

@@ -18,6 +18,8 @@ AI Portal 是一个面向企业内部场景的统一 AI 入口，目标是把多
 - [QUICKSTART.md](QUICKSTART.md)：5 分钟启动与验证
 - [API.md](API.md)：后端接口清单（与当前代码一致）
 - [DEVELOPMENT.md](DEVELOPMENT.md)：本地开发与调试
+- [PRESTART_CONDITIONS.md](PRESTART_CONDITIONS.md)：启动前置条件（OpenCode/OpenWork/端点检查）
+- [WEBSDK_EMBEDDING_GUIDE.md](WEBSDK_EMBEDDING_GUIDE.md)：WebSDK 嵌入与 Adapter 配置指南
 - [IMPLEMENTATION.md](IMPLEMENTATION.md)：V1 设计边界、模块职责、关键流程
 - [TEST_REPORT.md](TEST_REPORT.md)：测试与验收说明
 - [TEST_RESULTS_2026-03-26.md](TEST_RESULTS_2026-03-26.md)：历史测试快照
@@ -74,6 +76,8 @@ OpenCode  OpenWork        WebSDK Apps
 ```bash
 ./scripts/start.sh
 ```
+
+启动脚本会先执行前置检查（OpenCode/OpenWork + WebSDK 端点连通）；检查失败会直接中止启动。
 
 启动后访问：
 - 前端：`http://localhost:5173`

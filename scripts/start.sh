@@ -8,11 +8,18 @@ set -e
 echo "🚀 启动 AI Portal..."
 
 # 检查 Python 版本
-PYTHON_BIN="/home/yy/python312/bin/python"
-if ! command -v $PYTHON_BIN &> /dev/null; then
-    echo "❌ Python 3.12 未找到在 $PYTHON_BIN"
+if command -v /home/yy/python312/bin/python &> /dev/null; then
+    PYTHON_BIN="/home/yy/python312/bin/python"
+elif command -v python3 &> /dev/null; then
+    PYTHON_BIN="$(command -v python3)"
+elif command -v python &> /dev/null; then
+    PYTHON_BIN="$(command -v python)"
+else
+    echo "❌ Python 未找到，请安装 Python 3.12+"
     exit 1
 fi
+
+echo "✅ 使用 Python: $PYTHON_BIN"
 
 # 检查 Node.js 版本
 if ! command -v node &> /dev/null; then
@@ -32,6 +39,15 @@ if [ ! -f "backend/.env" ]; then
     cp .env.example backend/.env
     echo "✅ 已创建 backend/.env，请根据需要修改配置"
 fi
+
+# 启动前置检查（OpenCode / OpenWork / WebSDK 端点）
+echo "🔍 执行启动前置检查..."
+if ! $PYTHON_BIN scripts/preflight_check.py; then
+    echo "❌ 前置检查未通过，请先按文档启动 OpenCode/OpenWork 并检查端点配置"
+    exit 1
+fi
+
+echo "✅ 前置检查通过"
 
 # 启动后端
 echo "📦 启动后端服务..."

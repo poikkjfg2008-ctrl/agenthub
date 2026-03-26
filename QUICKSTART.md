@@ -17,16 +17,31 @@
 
 脚本会：
 1. 检查 Python / Node
-2. 安装依赖（若缺失）
-3. 启动 FastAPI（8000）
-4. 启动 Vite（5173）
-5. 写入日志到 `logs/`
+2. 执行启动前置检查（OpenCode/OpenWork 以及 WebSDK 端点连通性）
+3. 安装依赖（若缺失）
+4. 启动 FastAPI（8000）
+5. 启动 Vite（5173）
+6. 写入日志到 `logs/`
 
 停止：
 
 ```bash
 ./scripts/stop.sh
 ```
+
+## 2.1) 仅执行前置检查
+
+```bash
+python3 scripts/preflight_check.py
+```
+
+离线/CI 可仅做配置校验：
+
+```bash
+python scripts/preflight_check.py --no-network
+```
+
+详见 [PRESTART_CONDITIONS.md](PRESTART_CONDITIONS.md)。
 
 ---
 
