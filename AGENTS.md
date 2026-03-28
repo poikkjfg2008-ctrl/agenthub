@@ -45,12 +45,14 @@ OpenCode  OpenWork        WebSDK/Iframe Apps
 - **Language**: Python 3.12+
 - **Framework**: FastAPI 0.115+
 - **Server**: Uvicorn 0.32+
-- **Dependencies**: 
-  - Pydantic 2.10+ (data validation)
-  - PyJWT 2.10+ (authentication)
-  - httpx 0.28+ (HTTP client)
-  - redis 5.2+ (optional storage)
-  - python-multipart 0.0.20+ (form parsing)
+- **Dependencies** (from `backend/pyproject.toml`):
+  - `fastapi>=0.115.0` - Web framework
+  - `uvicorn>=0.32.0` - ASGI server
+  - `pydantic>=2.10.4` - Data validation
+  - `pyjwt>=2.10.1` - JWT authentication
+  - `httpx>=0.28.1` - HTTP client
+  - `redis>=5.2.0` - Redis client
+  - `python-multipart>=0.0.20` - Form parsing
 - **Configuration**: Pydantic Settings with `.env` file
 - **Package Manager**: pip with `requirements.txt` and `pyproject.toml`
 
@@ -62,7 +64,7 @@ OpenCode  OpenWork        WebSDK/Iframe Apps
 - **Styling**: Tailwind CSS 3.4+
 - **HTTP Client**: Axios 1.7+
 - **Icons**: Lucide React 0.468+
-- **Markdown**: react-markdown, remark-gfm, remark-math, rehype-katex
+- **Markdown**: react-markdown, remark-gfm, remark-math, rehype-katex, rehype-highlight
 - **Package Manager**: npm
 
 ### Frontend V2 Features (2026-03-28)
@@ -74,7 +76,7 @@ OpenCode  OpenWork        WebSDK/Iframe Apps
 
 ### Infrastructure
 - **Storage**: Memory (dev) / Redis 7 (prod)
-- **Container**: Docker Compose for Redis service
+- **Container**: Docker Compose for Redis service (`docker-compose.yml`)
 - **Authentication**: JWT Cookie-based with mock SSO fallback
 
 ---
@@ -108,7 +110,7 @@ agenthub/
 │   │   │   ├── memory_store.py     # In-memory storage
 │   │   │   └── redis_store.py      # Redis persistence
 │   │   └── logging/
-│   │       └── middleware.py       # Trace ID middleware
+│   │       └── middleware.py       # Trace ID middleware + JSON logging
 │   ├── config/
 │   │   └── resources.json          # Resource catalog configuration
 │   ├── tests/
@@ -132,21 +134,18 @@ agenthub/
 │   │   │   ├── ResourceCard.tsx    # Resource card component
 │   │   │   ├── WorkspacePane.tsx   # WebSDK container
 │   │   │   └── IframeWorkspace.tsx # Iframe embed component
-│   │   ├── styles/
-│   │   │   └── globals.css         # Global styles + Tailwind
-│   │   └── tests/                  # Frontend tests
-│   │       ├── test_frontend.js
-│   │       └── test_frontend.tsx
+│   │   └── styles/
+│   │       └── globals.css         # Global styles + Tailwind + Markdown styles
 │   ├── public/                     # Static assets
 │   ├── package.json                # NPM config
 │   ├── tsconfig.json               # TypeScript config
 │   ├── tailwind.config.js          # Tailwind config
-│   ├── vite.config.ts              # Vite config
+│   ├── vite.config.ts              # Vite config (port 5173, API proxy)
 │   └── .env                        # Frontend env vars
 ├── public/
 │   └── sdk-host.html               # WebSDK host page for iframe
 ├── scripts/
-│   ├── start.sh                    # Start all services
+│   ├── start.sh                    # Start all services with preflight checks
 │   ├── stop.sh                     # Stop all services
 │   ├── test.sh                     # Run tests
 │   └── preflight_check.py          # Pre-start checks
@@ -198,7 +197,7 @@ cd frontend
 # Install dependencies
 npm install
 
-# Run development server
+# Run development server (port 5173)
 npm run dev
 
 # Build for production
@@ -532,7 +531,6 @@ Three-column responsive layout:
 | `src/components/ChatInterface.tsx` | Chat UI with Markdown support |
 | `src/styles/globals.css` | Global styles + Tailwind + Markdown styles |
 | `public/sdk-host.html` | WebSDK container |
-| `docs/FRONTEND_UI_V2_DEVELOPMENT.md` | V2 UI development documentation |
 
 ---
 
@@ -601,7 +599,6 @@ Three-column responsive layout:
 - [API.md](API.md): Complete API reference
 - [DEVELOPMENT.md](DEVELOPMENT.md): Development workflow
 - [IMPLEMENTATION.md](IMPLEMENTATION.md): V1 design and architecture
-- [FRONTEND_UI_V2_DEVELOPMENT.md](docs/FRONTEND_UI_V2_DEVELOPMENT.md): V2 UI development documentation (NEW)
 - [PRESTART_CONDITIONS.md](PRESTART_CONDITIONS.md): Pre-flight check details
 - [WEBSDK_EMBEDDING_GUIDE.md](WEBSDK_EMBEDDING_GUIDE.md): WebSDK configuration
 - [TEST_REPORT.md](TEST_REPORT.md): Testing guidelines

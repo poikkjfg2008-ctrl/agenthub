@@ -263,6 +263,32 @@ async def list_sessions(user: CurrentUser, limit: int = Query(50, ge=1, le=100))
     return {"sessions": [s.model_dump() for s in sessions]}
 
 
+@app.get("/api/sessions/{portal_session_id}")
+async def get_session(
+    portal_session_id: str,
+    user: CurrentUser
+):
+    """
+    Get session details by ID
+    """
+    # Get session
+    session = await storage.get_session(portal_session_id)
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session not found: {portal_session_id}"
+        )
+
+    # Verify ownership
+    if session.user_emp_no != user.emp_no:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied to this session"
+        )
+
+    return session.model_dump()
+
+
 @app.get("/api/sessions/{portal_session_id}/messages", response_model=List[Message])
 async def get_session_messages(
     portal_session_id: str,
@@ -390,6 +416,13 @@ async def get_embed_config(launch_id: str, user: CurrentUser):
             detail=f"Resource not found: {launch.resource_id}"
         )
 
+    # Verify resource is WebSDK mode
+    if resource.launch_mode != LaunchMode.WEBSDK:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Resource '{resource.name}' is not a WebSDK resource. Launch mode: {resource.launch_mode}"
+        )
+
     # Generate embed config
     embed_config = websdk_adapter.get_embed_config(launch, resource)
     return embed_config
@@ -421,6 +454,13 @@ async def get_iframe_config(launch_id: str, user: CurrentUser):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Resource not found: {launch.resource_id}"
+        )
+
+    # Verify resource is iframe mode
+    if resource.launch_mode != LaunchMode.IFRAME:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Resource '{resource.name}' is not an iframe resource. Launch mode: {resource.launch_mode}"
         )
 
     # Generate iframe config

@@ -425,21 +425,62 @@ function ChatRoutePage({
   onResourceChange: (resource: Resource) => void;
 }) {
   const { sessionId } = useParams();
+  const navigate = useNavigate();
   const [resource, setResource] = useState<Resource | null>(null);
 
+  // Fetch session details and set correct resource
   useEffect(() => {
     if (sessionId) {
-      // Try to find resource for this session
+      loadSessionResource();
+    }
+  }, [sessionId, resourcesGrouped]);
+
+  const loadSessionResource = async () => {
+    if (!sessionId) return;
+    
+    try {
+      // Get session details from API to find the resource_id
+      const response = await sessionApi.getSession(sessionId);
+      const session = response.data;
+      
+      // Find the resource for this session
       const allResources = Object.values(resourcesGrouped).flat();
-      // We would need to fetch session details to get resource_id
-      // For now, just use current resource or default
+      const sessionResource = allResources.find((r) => r.id === session.resource_id);
+      
+      if (sessionResource) {
+        setResource(sessionResource);
+        onResourceChange(sessionResource);
+      } else {
+        // Fallback to default if resource not found
+        const defaultRes = allResources.find((r) => r.id === DEFAULT_RESOURCE_ID) || allResources[0];
+        if (defaultRes) {
+          setResource(defaultRes);
+          onResourceChange(defaultRes);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load session resource:', error);
+      // Fallback to default resource on error
+      const allResources = Object.values(resourcesGrouped).flat();
       if (allResources.length > 0) {
         const defaultRes = allResources.find((r) => r.id === DEFAULT_RESOURCE_ID) || allResources[0];
         setResource(defaultRes);
         onResourceChange(defaultRes);
       }
     }
-  }, [sessionId, resourcesGrouped]);
+  };
+
+  const handleSelectSession = (selectedSessionId: string) => {
+    // Navigate to the selected session
+    navigate(`/chat/${selectedSessionId}`);
+  };
+
+  const handleNewChat = () => {
+    // Navigate to home to start a new chat with current resource
+    if (resource) {
+      navigate('/');
+    }
+  };
 
   if (!sessionId) return null;
 
@@ -448,8 +489,8 @@ function ChatRoutePage({
       <div className="w-64 border-r bg-white hidden lg:flex flex-col">
         <SessionSidebar
           currentSessionId={sessionId}
-          onSelectSession={() => {}}
-          onNewChat={() => {}}
+          onSelectSession={handleSelectSession}
+          onNewChat={handleNewChat}
         />
       </div>
       <div className="flex-1">

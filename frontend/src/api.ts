@@ -54,6 +54,9 @@ export const sessionApi = {
   listSessions: (limit = 50) =>
     api.get<{ sessions: PortalSession[] }>(`/api/sessions?limit=${limit}`),
 
+  getSession: (sessionId: string) =>
+    api.get<PortalSession>(`/api/sessions/${sessionId}`),
+
   getMessages: (sessionId: string) =>
     api.get<Message[]>(`/api/sessions/${sessionId}/messages`),
 
