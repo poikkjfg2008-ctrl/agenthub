@@ -102,5 +102,18 @@
       "app_key": "agent_report_key",
       "base_url": "http://127.0.0.1:4096/agent/chat"
     }
+  },
+  {
+    "id": "op-agent",
+    "name": "OP Agent",
+    "type": "iframe",
+    "launch_mode": "iframe",
+    "group": "集成应用",
+    "description": "通过iframe直接嵌入的OP Agent应用",
+    "enabled": true,
+    "tags": ["agent", "iframe", "integration"],
+    "config": {
+      "iframe_url": "http://10.18.220.244:32300/product/llm/chat/d72tbrjoisidid7ra8mo"
+    }
   }
 ]

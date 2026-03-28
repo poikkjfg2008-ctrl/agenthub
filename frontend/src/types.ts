@@ -1,7 +1,7 @@
 /** Type definitions for AI Portal */
 
-export type ResourceType = 'direct_chat' | 'skill_chat' | 'kb_websdk' | 'agent_websdk';
-export type LaunchMode = 'native' | 'websdk';
+export type ResourceType = 'direct_chat' | 'skill_chat' | 'kb_websdk' | 'agent_websdk' | 'iframe';
+export type LaunchMode = 'native' | 'websdk' | 'iframe';
 
 export interface UserCtx {
   emp_no: string;
@@ -19,6 +19,8 @@ export interface ResourceConfig {
   base_url?: string;
   skill_name?: string;
   starter_prompts?: string[];
+  iframe_url?: string;  // Direct iframe URL for iframe mode
+  [key: string]: any;  // Allow additional config properties
 }
 
 export interface Resource {
@@ -81,5 +83,10 @@ export interface EmbedConfig {
   app_key: string;
   base_url: string;
   launch_token: string;
+  user_context: any;
+}
+
+export interface IframeConfig {
+  iframe_url: string;
   user_context: any;
 }

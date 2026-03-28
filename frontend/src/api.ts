@@ -9,6 +9,7 @@ import type {
   LaunchResponse,
   SkillInfo,
   EmbedConfig,
+  IframeConfig,
 } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/';
@@ -64,6 +65,9 @@ export const sessionApi = {
 export const launchApi = {
   getEmbedConfig: (launchId: string) =>
     api.get<EmbedConfig>(`/api/launches/${launchId}/embed-config`),
+
+  getIframeConfig: (launchId: string) =>
+    api.get<IframeConfig>(`/api/launches/${launchId}/iframe-config`),
 
   listLaunches: (limit = 50) =>
     api.get<{ launches: LaunchRecord[] }>(`/api/launches?limit=${limit}`),

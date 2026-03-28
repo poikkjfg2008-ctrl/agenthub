@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from .config import settings
 from .models import (
-    Resource, LaunchResponse, Message, SkillInfo, EmbedConfig,
+    Resource, LaunchResponse, Message, SkillInfo, EmbedConfig, IframeConfig,
     ResourceType, LaunchMode
 )
 from .auth.deps import CurrentUser, OptionalUser
@@ -22,6 +22,7 @@ from .acl.service import acl_service
 from .adapters.opencode import OpenCodeAdapter
 from .adapters.skill_chat import SkillChatAdapter
 from .adapters.websdk import WebSDKAdapter
+from .adapters.iframe import IframeAdapter
 from .adapters.openwork import OpenWorkAdapter
 from .store import store as storage
 from .logging.middleware import TraceMiddleware
@@ -31,6 +32,7 @@ from .logging.middleware import TraceMiddleware
 opencode_adapter = OpenCodeAdapter()
 skill_chat_adapter = SkillChatAdapter()
 websdk_adapter = WebSDKAdapter()
+iframe_adapter = IframeAdapter()
 openwork_adapter = OpenWorkAdapter()
 
 
@@ -233,6 +235,18 @@ async def launch_resource(resource_id: str, user: CurrentUser):
             launch_id=launch_record.launch_id
         )
 
+    elif resource.launch_mode == LaunchMode.IFRAME:
+        # Iframe mode - create launch record
+        launch_record = iframe_adapter.create_launch_record(resource, user)
+
+        # Save to storage
+        await storage.save_launch(launch_record)
+
+        return LaunchResponse(
+            kind=LaunchMode.IFRAME,
+            launch_id=launch_record.launch_id
+        )
+
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -379,6 +393,39 @@ async def get_embed_config(launch_id: str, user: CurrentUser):
     # Generate embed config
     embed_config = websdk_adapter.get_embed_config(launch, resource)
     return embed_config
+
+
+@app.get("/api/launches/{launch_id}/iframe-config", response_model=IframeConfig)
+async def get_iframe_config(launch_id: str, user: CurrentUser):
+    """
+    Get iframe embed configuration for a launch
+    """
+    # Get launch record
+    launch = await storage.get_launch(launch_id)
+    if not launch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Launch not found: {launch_id}"
+        )
+
+    # Verify ownership
+    if launch.user_emp_no != user.emp_no:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied to this launch"
+        )
+
+    # Get resource
+    resource = catalog_service.get_resource_by_id(launch.resource_id)
+    if not resource:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Resource not found: {launch.resource_id}"
+        )
+
+    # Generate iframe config
+    iframe_config = iframe_adapter.get_iframe_config(launch, resource)
+    return iframe_config
 
 
 @app.get("/api/skills", response_model=List[SkillInfo])

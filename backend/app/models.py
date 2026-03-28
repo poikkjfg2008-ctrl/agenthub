@@ -12,12 +12,14 @@ class ResourceType(str, Enum):
     SKILL_CHAT = "skill_chat"
     KB_WEBSDK = "kb_websdk"
     AGENT_WEBSDK = "agent_websdk"
+    IFRAME = "iframe"
 
 
 class LaunchMode(str, Enum):
     """Resource launch modes"""
     NATIVE = "native"  # Native chat interface
     WEBSDK = "websdk"  # WebSDK iframe embed
+    IFRAME = "iframe"  # Direct iframe embed
 
 
 class UserCtx(BaseModel):
@@ -38,6 +40,7 @@ class ResourceConfig(BaseModel):
     base_url: Optional[str] = None
     skill_name: Optional[str] = None
     starter_prompts: Optional[List[str]] = None
+    iframe_url: Optional[str] = None  # Direct iframe URL for iframe mode
 
 
 class Resource(BaseModel):
@@ -105,4 +108,10 @@ class EmbedConfig(BaseModel):
     app_key: str = Field(..., description="WebSDK app key")
     base_url: str = Field(..., description="WebSDK base URL")
     launch_token: str = Field(..., description="Launch token")
+    user_context: Dict[str, Any] = Field(..., description="User context")
+
+
+class IframeConfig(BaseModel):
+    """Iframe embed configuration"""
+    iframe_url: str = Field(..., description="Iframe URL to embed")
     user_context: Dict[str, Any] = Field(..., description="User context")

@@ -1,7 +1,7 @@
 /** Session sidebar component */
 
 import { useEffect, useState } from 'react';
-import { MessageSquare, Clock, Trash2 } from 'lucide-react';
+import { MessageSquare, Clock } from 'lucide-react';
 import { sessionApi } from '../api';
 import { resourceApi } from '../api';
 import type { PortalSession } from '../types';
