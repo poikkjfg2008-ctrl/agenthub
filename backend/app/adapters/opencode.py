@@ -277,7 +277,13 @@ class OpenCodeAdapter(ExecutionAdapter):
             response.raise_for_status()
 
             payload = response.json()
-            raw_messages = payload if isinstance(payload, list) else []
+            #raw_messages = payload if isinstance(payload, list) else []
+            if isinstance(payload, list):
+                raw_messages = payload
+            elif isinstance(payload, dict):
+                raw_messages = payload.get("messages", [])
+            else:
+                raw_messages = []
             messages: List[Message] = []
 
             for msg in raw_messages:
