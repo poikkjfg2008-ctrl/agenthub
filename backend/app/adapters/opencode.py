@@ -1,10 +1,13 @@
 """OpenCode adapter for native dialogue"""
 
+import json
+import uuid
 import httpx
 import logging
 import asyncio
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, AsyncIterator
 from datetime import datetime
+from fastapi import UploadFile
 
 from .base import ExecutionAdapter
 from ..models import Message
@@ -144,6 +147,114 @@ class OpenCodeAdapter(ExecutionAdapter):
             logger.error(f"Failed to send message to session {session_id}: {e}")
             raise
 
+    async def send_message_stream(
+        self,
+        session_id: str,
+        message: str,
+        trace_id: Optional[str] = None,
+        system_prompt: Optional[str] = None
+    ) -> AsyncIterator[str]:
+        """
+        Send a message to OpenCode session with streaming response
+        Yields chunks of the assistant's response
+        """
+        client = await self._get_client()
+
+        headers = {}
+        if trace_id:
+            headers["X-Trace-ID"] = trace_id
+
+        payload: Dict[str, Any] = {
+            "parts": [{"type": "text", "text": message}],
+            "stream": True
+        }
+        if system_prompt:
+            payload["system"] = system_prompt
+
+        try:
+            async with client.stream(
+                "POST",
+                f"/session/{session_id}/message",
+                json=payload,
+                headers=headers,
+                timeout=120.0
+            ) as response:
+                response.raise_for_status()
+                
+                # Process SSE stream
+                async for line in response.aiter_lines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    # OpenCode returns JSON lines directly (not standard SSE with 'data: ' prefix)
+                    # Try to parse as JSON first
+                    try:
+                        data = json.loads(line)
+                        
+                        # Extract text from OpenCode response format
+                        if isinstance(data, dict):
+                            chunk_text = self._extract_stream_chunk_text(data)
+                            if chunk_text:
+                                yield chunk_text
+                    except json.JSONDecodeError:
+                        # Not valid JSON, handle as SSE format or plain text
+                        if line.startswith("data: "):
+                            data_str = line[6:]  # Remove "data: " prefix
+                            
+                            if data_str == "[DONE]":
+                                break
+                            
+                            try:
+                                envelope = json.loads(data_str)
+                                if isinstance(envelope, dict):
+                                    chunk_text = self._extract_stream_chunk_text(envelope)
+                                    if chunk_text:
+                                        yield chunk_text
+                            except json.JSONDecodeError:
+                                if data_str and data_str != "[DONE]":
+                                    yield data_str
+                        elif line and not line.startswith(":"):
+                            yield line
+
+            logger.info(f"Streamed message to session {session_id}, trace_id={trace_id}")
+
+        except httpx.HTTPError as e:
+            logger.error(f"Failed to stream message to session {session_id}: {e}")
+            raise
+
+    def _extract_stream_chunk_text(self, data: Dict[str, Any]) -> Optional[str]:
+        """Extract text from stream chunk data"""
+        # Try different possible formats
+        
+        # OpenCode specific format: { "parts": [...] }
+        if "parts" in data and isinstance(data["parts"], list):
+            text_parts = []
+            for part in data["parts"]:
+                if part.get("type") == "text" and "text" in part:
+                    text_parts.append(part["text"])
+            if text_parts:
+                return "\n".join(text_parts)
+        
+        # OpenAI-style format
+        if "choices" in data and len(data["choices"]) > 0:
+            choice = data["choices"][0]
+            if "delta" in choice:
+                return choice["delta"].get("content", "")
+            if "text" in choice:
+                return choice["text"]
+        
+        if "content" in data:
+            return data["content"]
+        
+        if "text" in data:
+            return data["text"]
+        
+        if "message" in data and isinstance(data["message"], dict):
+            return data["message"].get("content", "")
+        
+        return None
+
     async def get_messages(
         self,
         session_id: str,
@@ -213,6 +324,55 @@ class OpenCodeAdapter(ExecutionAdapter):
             logger.error(f"Failed to close session {session_id}: {e}")
             return False
 
+    async def upload_file(
+        self,
+        session_id: str,
+        file: UploadFile,
+        description: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Upload a file to the OpenCode session
+        """
+        client = await self._get_client()
+
+        try:
+            # Read file content
+            content = await file.read()
+            
+            # Prepare multipart form data
+            files = {
+                "file": (file.filename, content, file.content_type or "application/octet-stream")
+            }
+            data = {}
+            if description:
+                data["description"] = description
+
+            response = await client.post(
+                f"/session/{session_id}/upload",
+                files=files,
+                data=data
+            )
+            response.raise_for_status()
+
+            result = response.json()
+            logger.info(f"Uploaded file {file.filename} to session {session_id}")
+            
+            # Return standardized response
+            return {
+                "file_id": result.get("id") or result.get("file_id") or str(uuid.uuid4()),
+                "file_name": file.filename,
+                "file_type": file.content_type or "application/octet-stream",
+                "file_size": len(content),
+                "url": result.get("url") or f"/session/{session_id}/files/{result.get('id', 'unknown')}"
+            }
+
+        except httpx.HTTPError as e:
+            logger.error(f"Failed to upload file to session {session_id}: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error uploading file: {e}")
+            raise
+
     @staticmethod
     def _extract_text_from_parts(parts: List[Dict[str, Any]]) -> str:
         """Extract readable text from OpenCode message parts."""
@@ -220,6 +380,10 @@ class OpenCodeAdapter(ExecutionAdapter):
         for part in parts:
             if part.get("type") == "text" and part.get("text"):
                 text_chunks.append(part["text"])
+            elif part.get("type") == "image" and part.get("url"):
+                text_chunks.append(f"[Image: {part['url']}]")
+            elif part.get("type") == "file" and part.get("name"):
+                text_chunks.append(f"[File: {part['name']}]")
         return "\n".join(text_chunks)
 
     @staticmethod

@@ -1,18 +1,15 @@
-<!-- From: /home/yy/agenthub/AGENTS.md -->
+<!-- This file provides essential information for AI coding agents working on the AI Portal project. -->
+
 # AGENTS.md - AI Portal Project Guide
-
-This file provides essential information for AI coding agents working on the AI Portal project.
-
----
 
 ## Project Overview
 
 **AI Portal（统一入口）** is a unified enterprise AI entry point that integrates multiple AI capabilities into a single portal:
 
-- **Native chat** (`direct_chat`): Direct chat with AI models through OpenCode
+- **Native chat** (`direct_chat`): Direct chat with AI models through OpenCode API
 - **Skill chat** (`skill_chat`): AI with specialized system prompts (coding, writing, data analysis)
 - **Knowledge base** (`kb_websdk`): Knowledge base via WebSDK embedding
-- **Agent applications** (`agent_websdk`): AI agents via WebSDK
+- **Agent applications** (`agent_websdk`): AI agents via WebSDK embedding
 - **Iframe integrations** (`iframe`): Direct iframe embed for third-party apps
 
 **Architecture**: FastAPI backend (BFF pattern) + React (Vite) frontend
@@ -47,17 +44,22 @@ OpenCode  OpenWork        WebSDK/Iframe Apps
 - **Language**: Python 3.12+
 - **Framework**: FastAPI 0.115+
 - **Server**: Uvicorn 0.32+ (ASGI)
-- **Dependencies** (from `backend/pyproject.toml`):
-  - `fastapi>=0.115.0` - Web framework
-  - `uvicorn>=0.32.0` - ASGI server
-  - `pydantic>=2.10.4` - Data validation
-  - `pydantic-settings>=2.0.0` - Configuration management
-  - `pyjwt>=2.10.1` - JWT authentication
-  - `httpx>=0.28.1` - HTTP client
-  - `redis>=5.2.0` - Redis client
-  - `python-multipart>=0.0.20` - Form parsing
 - **Configuration**: Pydantic Settings with `.env` file
-- **Package Manager**: pip with `requirements.txt` and `pyproject.toml`
+- **Storage**: In-memory (dev) / Redis 7 (prod)
+- **Authentication**: JWT Cookie-based with mock SSO fallback
+
+**Key Dependencies** (from `backend/pyproject.toml`):
+```toml
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "redis>=5.2.0",
+    "httpx>=0.28.1",
+    "pyjwt>=2.10.1",
+    "pydantic>=2.10.4",
+    "python-multipart>=0.0.20",
+]
+```
 
 ### Frontend
 - **Language**: TypeScript 5.7+
@@ -73,10 +75,9 @@ OpenCode  OpenWork        WebSDK/Iframe Apps
   - `remark-math` - Math support
   - `rehype-katex` - KaTeX math rendering
   - `rehype-highlight` - Code syntax highlighting
-- **Package Manager**: npm
 
 ### Infrastructure
-- **Storage**: Memory (dev) / Redis 7 (prod)
+- **Storage**: Memory (dev) / Redis 7 (prod) - configured via `USE_REDIS` env var
 - **Container**: Docker Compose for Redis service (`docker-compose.yml`)
 - **Authentication**: JWT Cookie-based with mock SSO fallback
 
@@ -89,12 +90,12 @@ agenthub/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py                 # FastAPI entry point, all routes
-│   │   ├── config.py               # Pydantic settings
+│   │   ├── config.py               # Pydantic settings (loads from .env)
 │   │   ├── models.py               # Pydantic models (Resource, UserCtx, etc.)
 │   │   ├── adapters/
 │   │   │   ├── base.py             # ExecutionAdapter ABC
-│   │   │   ├── opencode.py         # Native chat adapter (OpenCode API)
-│   │   │   ├── skill_chat.py       # Skill mode adapter
+│   │   │   ├── opencode.py         # OpenCode API adapter (native chat)
+│   │   │   ├── skill_chat.py       # Skill mode adapter (system prompt injection)
 │   │   │   ├── websdk.py           # WebSDK launch adapter
 │   │   │   ├── iframe.py           # Iframe embed adapter
 │   │   │   └── openwork.py         # OpenWork API adapter (skills)
@@ -108,7 +109,7 @@ agenthub/
 │   │   │   └── service.py          # Access control (resource filtering)
 │   │   ├── store/
 │   │   │   ├── __init__.py         # Store selector (Redis/Memory)
-│   │   │   ├── memory_store.py     # In-memory storage
+│   │   │   ├── memory_store.py     # In-memory storage (OrderedDict)
 │   │   │   └── redis_store.py      # Redis persistence
 │   │   └── logging/
 │   │       └── middleware.py       # Trace ID middleware + JSON logging
@@ -120,10 +121,10 @@ agenthub/
 │   │   └── test_preflight_check.py # Preflight check tests
 │   ├── pyproject.toml              # Python project config
 │   ├── requirements.txt            # Python dependencies
-│   └── .env                        # Environment variables
+│   └── .env                        # Environment variables (gitignored)
 ├── frontend/
 │   ├── src/
-│   │   ├── App.tsx                 # Main app with router
+│   │   ├── App.tsx                 # Main app with router (V2 three-column layout)
 │   │   ├── api.ts                  # API client (axios)
 │   │   ├── types.ts                # TypeScript interfaces
 │   │   ├── main.tsx                # Entry point
@@ -142,13 +143,13 @@ agenthub/
 │   ├── tailwind.config.js          # Tailwind config
 │   └── vite.config.ts              # Vite config (port 5173, API proxy)
 ├── public/
-│   └── sdk-host.html               # WebSDK host page for iframe
+│   └── sdk-host.html               # WebSDK host page for iframe embedding
 ├── scripts/
 │   ├── start.sh                    # Start all services with preflight checks
 │   ├── stop.sh                     # Stop all services
-│   └── preflight_check.py          # Pre-start checks
-├── logs/                           # Service logs
-├── docker-compose.yml              # Redis service
+│   └── preflight_check.py          # Pre-start dependency checks
+├── logs/                           # Service logs (gitignored)
+├── docker-compose.yml              # Redis service configuration
 └── docs/                           # Documentation
 ```
 
@@ -208,15 +209,14 @@ npm run preview
 npm run lint
 ```
 
-### Testing
+### Docker Services
 
 ```bash
-# Run all tests
-./scripts/test.sh
+# Start Redis
+docker-compose up -d redis
 
-# Backend tests only
-cd backend && /home/yy/python312/bin/python tests/test_api_simple.py
-cd backend && /home/yy/python312/bin/python tests/test_api.py
+# Stop Redis
+docker-compose down
 ```
 
 ---
@@ -354,7 +354,7 @@ export function ResourceCard({ resource, onLaunch }: ResourceCardProps) {
 
 Located in `backend/tests/`:
 - `test_api.py`: Comprehensive API tests
-- `test_api_simple.py`: Quick smoke tests
+- `test_api_simple.py`: Quick smoke tests (recommended for development)
 - `test_preflight_check.py`: Preflight check tests
 
 Run with:
@@ -638,6 +638,9 @@ Three-column responsive layout:
 - [IMPLEMENTATION.md](IMPLEMENTATION.md): V1 design and architecture
 - [docs/README.md](docs/README.md): User configuration guide
 - [docs/FRONTEND_UI_V2_DEVELOPMENT.md](docs/FRONTEND_UI_V2_DEVELOPMENT.md): Frontend V2 features
+- [docs/01_START_OPENCODE_OPENWORK.md](docs/01_START_OPENCODE_OPENWORK.md): Starting OpenCode/OpenWork
+- [docs/02_CONFIGURE_AI_PORTAL.md](docs/02_CONFIGURE_AI_PORTAL.md): AI Portal configuration
+- [docs/03_ADD_WEBSDK_RESOURCES.md](docs/03_ADD_WEBSDK_RESOURCES.md): Adding WebSDK resources
 
 ---
 

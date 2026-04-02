@@ -1,7 +1,8 @@
 """Skill Chat adapter for skill-based conversations"""
 
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, AsyncIterator
+from fastapi import UploadFile
 
 from .base import ExecutionAdapter
 from .opencode import OpenCodeAdapter
@@ -63,6 +64,27 @@ class SkillChatAdapter(ExecutionAdapter):
             system_prompt=system_prompt,
         )
 
+    async def send_message_stream(
+        self,
+        session_id: str,
+        message: str,
+        trace_id: Optional[str] = None
+    ) -> AsyncIterator[str]:
+        """
+        Send a message to skill chat session with streaming response
+        Injects system prompt to enforce skill mode behavior
+        """
+        skill_name = self._session_skill_map.get(session_id, "unknown_skill")
+        system_prompt = self._build_skill_mode_system_prompt(skill_name)
+
+        async for chunk in self.opencode_adapter.send_message_stream(
+            session_id=session_id,
+            message=message,
+            trace_id=trace_id,
+            system_prompt=system_prompt,
+        ):
+            yield chunk
+
     async def get_messages(
         self,
         session_id: str,
@@ -85,6 +107,18 @@ class SkillChatAdapter(ExecutionAdapter):
         """
         self._session_skill_map.pop(session_id, None)
         return await self.opencode_adapter.close_session(session_id, trace_id)
+
+    async def upload_file(
+        self,
+        session_id: str,
+        file: UploadFile,
+        description: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Upload a file to the skill chat session
+        Delegates to OpenCode adapter
+        """
+        return await self.opencode_adapter.upload_file(session_id, file, description)
 
     async def close(self):
         """Close underlying adapter"""

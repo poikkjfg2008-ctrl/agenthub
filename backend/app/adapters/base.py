@@ -1,7 +1,9 @@
 """Base adapter protocol and interfaces"""
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, AsyncIterator
+from fastapi import UploadFile
+
 from ..models import Message
 
 
@@ -38,6 +40,19 @@ class ExecutionAdapter(ABC):
         pass
 
     @abstractmethod
+    async def send_message_stream(
+        self,
+        session_id: str,
+        message: str,
+        trace_id: Optional[str] = None
+    ) -> AsyncIterator[str]:
+        """
+        Send a message to the session with streaming response
+        Yields chunks of the assistant's response
+        """
+        pass
+
+    @abstractmethod
     async def get_messages(
         self,
         session_id: str,
@@ -56,5 +71,18 @@ class ExecutionAdapter(ABC):
     ) -> bool:
         """
         Close a session
+        """
+        pass
+
+    @abstractmethod
+    async def upload_file(
+        self,
+        session_id: str,
+        file: UploadFile,
+        description: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Upload a file to the session
+        Returns file metadata including URL
         """
         pass

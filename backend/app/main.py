@@ -1,13 +1,15 @@
 """FastAPI application entry point for AI Portal"""
 
 import uuid
+import json
 from contextlib import asynccontextmanager
-from typing import List
+from typing import List, Optional, AsyncIterator
 from datetime import datetime
-from fastapi import FastAPI, Depends, HTTPException, status, Request, Query
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Query, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from .config import settings
@@ -93,6 +95,22 @@ if static_dir.exists():
 class SendMessageRequest(BaseModel):
     """Request to send message"""
     text: str
+
+
+class StreamMessageChunk(BaseModel):
+    """SSE stream chunk for message response"""
+    type: str  # "chunk" | "done" | "error"
+    content: Optional[str] = None
+    message_id: Optional[str] = None
+
+
+class FileUploadResponse(BaseModel):
+    """Response for file upload"""
+    file_id: str
+    file_name: str
+    file_type: str
+    file_size: int
+    url: str
 
 
 # API Routes
@@ -332,7 +350,7 @@ async def send_session_message(
     user: CurrentUser
 ):
     """
-    Send a message to a session
+    Send a message to a session (non-streaming)
     """
     import traceback
     
@@ -385,6 +403,143 @@ async def send_session_message(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to send message: {str(e)}"
+        )
+
+
+async def stream_message_response(
+    portal_session_id: str,
+    body: SendMessageRequest,
+    request: Request,
+    user: CurrentUser
+):
+    """
+    Generator for SSE streaming response
+    """
+    try:
+        # Get session
+        session = await storage.get_session(portal_session_id)
+        if not session:
+            yield f"data: {json.dumps({'type': 'error', 'content': f'Session not found: {portal_session_id}'})}\n\n"
+            return
+
+        # Verify ownership
+        if session.user_emp_no != user.emp_no:
+            yield f"data: {json.dumps({'type': 'error', 'content': 'Access denied to this session'})}\n\n"
+            return
+
+        # Get adapter from metadata
+        adapter_name = session.metadata.get("adapter", "opencode")
+
+        # Get trace ID
+        trace_context = getattr(request.state, "trace_context", None)
+        trace_id = getattr(trace_context, "trace_id", None)
+
+        # Generate message ID
+        message_id = str(uuid.uuid4())
+        
+        # Send initial message event
+        yield f"data: {json.dumps({'type': 'start', 'message_id': message_id})}\n\n"
+
+        # Stream message via adapter
+        if adapter_name == "skill_chat":
+            async for chunk in skill_chat_adapter.send_message_stream(
+                session.engine_session_id,
+                body.text,
+                trace_id
+            ):
+                yield f"data: {json.dumps({'type': 'chunk', 'content': chunk, 'message_id': message_id})}\n\n"
+        else:
+            async for chunk in opencode_adapter.send_message_stream(
+                session.engine_session_id,
+                body.text,
+                trace_id
+            ):
+                yield f"data: {json.dumps({'type': 'chunk', 'content': chunk, 'message_id': message_id})}\n\n"
+
+        # Update session
+        session.updated_at = datetime.utcnow()
+        await storage.save_session(session)
+
+        # Send completion event
+        yield f"data: {json.dumps({'type': 'done', 'message_id': message_id})}\n\n"
+        
+    except Exception as e:
+        error_detail = f"{type(e).__name__}: {str(e)}"
+        print(f"ERROR in send_session_message_stream: {error_detail}")
+        yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
+
+
+@app.post("/api/sessions/{portal_session_id}/messages/stream")
+async def send_session_message_stream(
+    portal_session_id: str,
+    body: SendMessageRequest,
+    request: Request,
+    user: CurrentUser
+):
+    """
+    Send a message to a session with SSE streaming response
+    """
+    return StreamingResponse(
+        stream_message_response(portal_session_id, body, request, user),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
+
+
+@app.post("/api/sessions/{portal_session_id}/upload", response_model=FileUploadResponse)
+async def upload_file_to_session(
+    portal_session_id: str,
+    user: CurrentUser,
+    file: UploadFile = File(...),
+    description: Optional[str] = Form(None),
+):
+    """
+    Upload a file to a session
+    """
+    try:
+        # Get session
+        session = await storage.get_session(portal_session_id)
+        if not session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Session not found: {portal_session_id}"
+            )
+
+        # Verify ownership
+        if session.user_emp_no != user.emp_no:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this session"
+            )
+
+        # Get adapter from metadata
+        adapter_name = session.metadata.get("adapter", "opencode")
+
+        # Upload file via adapter
+        if adapter_name == "skill_chat":
+            result = await skill_chat_adapter.upload_file(
+                session.engine_session_id,
+                file,
+                description
+            )
+        else:
+            result = await opencode_adapter.upload_file(
+                session.engine_session_id,
+                file,
+                description
+            )
+
+        return FileUploadResponse(**result)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload file: {str(e)}"
         )
 
 
