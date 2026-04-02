@@ -1,3 +1,4 @@
+<!-- From: /home/yy/agenthub/AGENTS.md -->
 # AGENTS.md - AI Portal Project Guide
 
 This file provides essential information for AI coding agents working on the AI Portal project.
@@ -6,12 +7,13 @@ This file provides essential information for AI coding agents working on the AI 
 
 ## Project Overview
 
-**AI Portal** is a unified enterprise AI entry point that integrates multiple AI capabilities into a single portal:
-- Native chat (direct chat with AI models)
-- Skill chat (AI with specialized system prompts)
-- Knowledge base via WebSDK embedding
-- Legacy WebSDK app integration
-- Iframe-based third-party app integration
+**AI Portal（统一入口）** is a unified enterprise AI entry point that integrates multiple AI capabilities into a single portal:
+
+- **Native chat** (`direct_chat`): Direct chat with AI models through OpenCode
+- **Skill chat** (`skill_chat`): AI with specialized system prompts (coding, writing, data analysis)
+- **Knowledge base** (`kb_websdk`): Knowledge base via WebSDK embedding
+- **Agent applications** (`agent_websdk`): AI agents via WebSDK
+- **Iframe integrations** (`iframe`): Direct iframe embed for third-party apps
 
 **Architecture**: FastAPI backend (BFF pattern) + React (Vite) frontend
 
@@ -19,10 +21,10 @@ This file provides essential information for AI coding agents working on the AI 
 [Mock SSO / Future Real SSO]
           │
           ▼
-      [Portal Web UI] (React + Vite)
+      [Portal Web UI] (React + Vite, port 5173)
           │
           ▼
-     [FastAPI BFF] (Python 3.12+)
+     [FastAPI BFF] (Python 3.12+, port 8000)
    ├─ Auth / ACL / Catalog
    ├─ Session Center (native+skill)
    ├─ Launch Record Center (websdk+iframe)
@@ -44,11 +46,12 @@ OpenCode  OpenWork        WebSDK/Iframe Apps
 ### Backend
 - **Language**: Python 3.12+
 - **Framework**: FastAPI 0.115+
-- **Server**: Uvicorn 0.32+
+- **Server**: Uvicorn 0.32+ (ASGI)
 - **Dependencies** (from `backend/pyproject.toml`):
   - `fastapi>=0.115.0` - Web framework
   - `uvicorn>=0.32.0` - ASGI server
   - `pydantic>=2.10.4` - Data validation
+  - `pydantic-settings>=2.0.0` - Configuration management
   - `pyjwt>=2.10.1` - JWT authentication
   - `httpx>=0.28.1` - HTTP client
   - `redis>=5.2.0` - Redis client
@@ -64,15 +67,13 @@ OpenCode  OpenWork        WebSDK/Iframe Apps
 - **Styling**: Tailwind CSS 3.4+
 - **HTTP Client**: Axios 1.7+
 - **Icons**: Lucide React 0.468+
-- **Markdown**: react-markdown, remark-gfm, remark-math, rehype-katex, rehype-highlight
+- **Markdown Rendering**: 
+  - `react-markdown` - React component for Markdown
+  - `remark-gfm` - GitHub Flavored Markdown
+  - `remark-math` - Math support
+  - `rehype-katex` - KaTeX math rendering
+  - `rehype-highlight` - Code syntax highlighting
 - **Package Manager**: npm
-
-### Frontend V2 Features (2026-03-28)
-- **New Layout**: Three-column design (Resource Sidebar + Chat Area + Workspace)
-- **Resource Sidebar**: Collapsible groups with card-style resource display
-- **Markdown Support**: Full markdown rendering with tables, math formulas, code highlighting
-- **Auto-resizing Input**: Dynamic height textarea with max 200px limit
-- **Unique Icons**: Gradient backgrounds for each resource type
 
 ### Infrastructure
 - **Storage**: Memory (dev) / Redis 7 (prod)
@@ -116,8 +117,7 @@ agenthub/
 │   ├── tests/
 │   │   ├── test_api.py             # Full API tests
 │   │   ├── test_api_simple.py      # Quick smoke tests
-│   │   ├── test_preflight_check.py # Preflight check tests
-│   │   └── run_backend_tests.sh    # Test runner script
+│   │   └── test_preflight_check.py # Preflight check tests
 │   ├── pyproject.toml              # Python project config
 │   ├── requirements.txt            # Python dependencies
 │   └── .env                        # Environment variables
@@ -140,14 +140,12 @@ agenthub/
 │   ├── package.json                # NPM config
 │   ├── tsconfig.json               # TypeScript config
 │   ├── tailwind.config.js          # Tailwind config
-│   ├── vite.config.ts              # Vite config (port 5173, API proxy)
-│   └── .env                        # Frontend env vars
+│   └── vite.config.ts              # Vite config (port 5173, API proxy)
 ├── public/
 │   └── sdk-host.html               # WebSDK host page for iframe
 ├── scripts/
 │   ├── start.sh                    # Start all services with preflight checks
 │   ├── stop.sh                     # Stop all services
-│   ├── test.sh                     # Run tests
 │   └── preflight_check.py          # Pre-start checks
 ├── logs/                           # Service logs
 ├── docker-compose.yml              # Redis service
@@ -404,11 +402,13 @@ curl -X POST http://localhost:8000/api/resources/general-chat/launch -b cookies.
 - Uses JWT tokens in HTTP-only cookies
 - Mock login for development (`/api/auth/mock-login`)
 - Real SSO should replace mock auth in production
+- `AUTH_MOCK_FALLBACK_ENABLED` for dev fallback only
 
 ### Authorization (ACL)
 
 - Current: "Allow if not configured" (permissive)
 - Production: Change to default-deny or least privilege
+- ACL rules support: `allowed_roles`, `allowed_depts`, `allowed_users`, `denied_users`
 
 ### WebSDK Security
 
@@ -448,6 +448,14 @@ class ExecutionAdapter(ABC):
     @abstractmethod
     async def send_message(self, session_id, message, trace_id) -> str:
         pass
+    
+    @abstractmethod
+    async def get_messages(self, session_id, trace_id) -> List[Message]:
+        pass
+    
+    @abstractmethod
+    async def close_session(self, session_id, trace_id) -> bool:
+        pass
 ```
 
 Adapters:
@@ -467,9 +475,11 @@ Toggle via `USE_REDIS` environment variable.
 
 ### 3. Resource Launch Modes
 
-- `native` → Creates `PortalSession` (maps to OpenCode session_id)
-- `websdk` → Creates `LaunchRecord` (returns launch_id for embed config)
-- `iframe` → Creates `LaunchRecord` (returns launch_id for iframe URL)
+| Launch Mode | Creates | Use Case |
+|------------|---------|----------|
+| `native` | `PortalSession` | Native chat, Skill chat |
+| `websdk` | `LaunchRecord` | WebSDK embed (kb_websdk, agent_websdk) |
+| `iframe` | `LaunchRecord` | Direct iframe embed |
 
 ### 4. Frontend Routing
 
@@ -506,6 +516,62 @@ Three-column responsive layout:
 | `agent_websdk` | websdk | Agent applications via WebSDK |
 | `iframe` | iframe | Direct iframe embed |
 
+### Resource Configuration Example
+
+```json
+{
+  "id": "skill-coding",
+  "name": "编程助手",
+  "type": "skill_chat",
+  "launch_mode": "native",
+  "group": "技能助手",
+  "description": "编程开发、代码审查、调试优化等开发任务",
+  "enabled": true,
+  "tags": ["coding", "development"],
+  "config": {
+    "skill_name": "coding",
+    "starter_prompts": ["请帮我审查这段代码", "帮我优化这个函数"],
+    "workspace_id": "default"
+  },
+  "acl": {
+    "allowed_roles": ["employee", "admin"],
+    "allowed_depts": ["Engineering", "IT"]
+  }
+}
+```
+
+---
+
+## API Endpoints
+
+### Health
+- `GET /api/health` - Health check
+
+### Authentication
+- `GET /api/auth/mock-login?emp_no={id}` - Mock login
+- `GET /api/auth/me` - Get current user
+- `POST /api/auth/logout` - Logout
+
+### Resources
+- `GET /api/resources` - List all resources
+- `GET /api/resources/grouped` - List resources by group
+- `GET /api/resources/{id}` - Get resource details
+- `POST /api/resources/{id}/launch` - Launch resource
+
+### Sessions (Native/Skill)
+- `GET /api/sessions` - List user sessions
+- `GET /api/sessions/{id}` - Get session details
+- `GET /api/sessions/{id}/messages` - Get session messages
+- `POST /api/sessions/{id}/messages` - Send message
+
+### Launches (WebSDK/Iframe)
+- `GET /api/launches` - List launch records
+- `GET /api/launches/{id}/embed-config` - Get WebSDK config
+- `GET /api/launches/{id}/iframe-config` - Get iframe config
+
+### Skills
+- `GET /api/skills` - List skills with status
+
 ---
 
 ## Important Files to Know
@@ -529,7 +595,6 @@ Three-column responsive layout:
 | `src/types.ts` | TypeScript interfaces |
 | `src/components/ResourceSidebar.tsx` | Resource sidebar with collapsible groups |
 | `src/components/ChatInterface.tsx` | Chat UI with Markdown support |
-| `src/styles/globals.css` | Global styles + Tailwind + Markdown styles |
 | `public/sdk-host.html` | WebSDK container |
 
 ---
@@ -562,46 +627,17 @@ Three-column responsive layout:
 
 ---
 
-## API Endpoints
-
-### Health
-- `GET /api/health` - Health check
-
-### Authentication
-- `GET /api/auth/mock-login?emp_no={id}` - Mock login
-- `GET /api/auth/me` - Get current user
-- `POST /api/auth/logout` - Logout
-
-### Resources
-- `GET /api/resources` - List all resources
-- `GET /api/resources/grouped` - List resources by group
-- `GET /api/resources/{id}` - Get resource details
-- `POST /api/resources/{id}/launch` - Launch resource
-
-### Sessions (Native/Skill)
-- `GET /api/sessions` - List user sessions
-- `GET /api/sessions/{id}/messages` - Get session messages
-- `POST /api/sessions/{id}/messages` - Send message
-
-### Launches (WebSDK/Iframe)
-- `GET /api/launches` - List launch records
-- `GET /api/launches/{id}/embed-config` - Get WebSDK config
-- `GET /api/launches/{id}/iframe-config` - Get iframe config
-
-### Skills
-- `GET /api/skills` - List skills with status
-
----
-
 ## Documentation References
 
+- [README.md](README.md): Project overview
 - [QUICKSTART.md](QUICKSTART.md): 5-minute startup guide
 - [API.md](API.md): Complete API reference
 - [DEVELOPMENT.md](DEVELOPMENT.md): Development workflow
-- [IMPLEMENTATION.md](IMPLEMENTATION.md): V1 design and architecture
 - [PRESTART_CONDITIONS.md](PRESTART_CONDITIONS.md): Pre-flight check details
 - [WEBSDK_EMBEDDING_GUIDE.md](WEBSDK_EMBEDDING_GUIDE.md): WebSDK configuration
-- [TEST_REPORT.md](TEST_REPORT.md): Testing guidelines
+- [IMPLEMENTATION.md](IMPLEMENTATION.md): V1 design and architecture
+- [docs/README.md](docs/README.md): User configuration guide
+- [docs/FRONTEND_UI_V2_DEVELOPMENT.md](docs/FRONTEND_UI_V2_DEVELOPMENT.md): Frontend V2 features
 
 ---
 

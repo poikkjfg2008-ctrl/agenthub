@@ -43,15 +43,10 @@ const groupConfig: Record<string, { icon: React.ReactNode; color: string; bgColo
     color: 'text-green-600',
     bgColor: 'bg-green-50',
   },
-  '智能应用': {
+  '智能体应用': {
     icon: <Zap className="w-5 h-5" />,
     color: 'text-orange-600',
     bgColor: 'bg-orange-50',
-  },
-  '集成应用': {
-    icon: <Globe className="w-5 h-5" />,
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50',
   },
 };
 
@@ -116,11 +111,11 @@ export function ResourceSidebar({
   currentResourceId,
   onSelectResource,
 }: ResourceSidebarProps) {
-  // Initialize all groups as expanded
+  // Initialize all groups as collapsed by default
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     Object.keys(resourcesGrouped).forEach((group) => {
-      initial[group] = true;
+      initial[group] = false;
     });
     return initial;
   });
@@ -133,7 +128,7 @@ export function ResourceSidebar({
   };
 
   // Sort groups in specific order
-  const groupOrder = ['基础对话', '技能助手', '知识库', '智能应用', '集成应用'];
+  const groupOrder = ['基础对话', '技能助手', '知识库', '智能体应用'];
   const sortedGroups = Object.entries(resourcesGrouped).sort(([a], [b]) => {
     const indexA = groupOrder.indexOf(a);
     const indexB = groupOrder.indexOf(b);

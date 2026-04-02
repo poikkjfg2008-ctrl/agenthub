@@ -101,13 +101,13 @@ function App() {
       } else if (launchData.kind === 'websdk' && launchData.launch_id) {
         setCurrentSessionId(null);
         setCurrentLaunchId(launchData.launch_id);
-        setShowWorkspace(true);
+        setShowWorkspace(false);
         setWorkspaceMode('websdk');
         navigate('/');
       } else if (launchData.kind === 'iframe' && launchData.launch_id) {
         setCurrentSessionId(null);
         setCurrentLaunchId(launchData.launch_id);
-        setShowWorkspace(true);
+        setShowWorkspace(false);
         setWorkspaceMode('iframe');
         navigate('/');
       }
