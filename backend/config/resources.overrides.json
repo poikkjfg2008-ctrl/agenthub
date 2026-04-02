@@ -1,0 +1,31 @@
+{
+  "overrides": {
+    "coding": {
+      "name": "编程助手",
+      "group": "技能助手",
+      "description": "编程开发、代码审查、调试优化等开发任务",
+      "starter_prompts": ["请帮我审查这段代码", "帮我优化这个函数", "解释这段代码的作用"],
+      "acl": {
+        "allowed_roles": ["employee", "admin"]
+      }
+    },
+    "writing": {
+      "name": "写作助手",
+      "group": "技能助手",
+      "description": "文档撰写、邮件起草、内容创作等写作任务",
+      "starter_prompts": ["帮我写一封邮件", "润色这段文字", "写一个项目总结"],
+      "acl": {
+        "allowed_roles": ["employee", "admin"]
+      }
+    },
+    "data_analysis": {
+      "name": "数据分析助手",
+      "group": "技能助手",
+      "description": "数据分析、图表解读、统计建模等分析任务",
+      "starter_prompts": ["分析这组数据", "解释这个统计结果", "帮我生成数据分析报告"],
+      "acl": {
+        "allowed_roles": ["employee", "admin"]
+      }
+    }
+  }
+}

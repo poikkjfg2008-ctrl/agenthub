@@ -82,8 +82,8 @@ Mock 登录，设置 Cookie。
 
 ## 4. 会话（native/skill）
 
-### `GET /api/sessions?limit=50`
-获取当前用户会话列表。
+### `GET /api/sessions?limit=50&resource_id=&type=&status=`
+获取当前用户会话列表。支持按 `resource_id`、`type`（资源类型）、`status`（active/archived）过滤。
 
 响应示例：
 ```json
@@ -91,21 +91,26 @@ Mock 登录，设置 Cookie。
   "sessions": [
     {
       "portal_session_id": "uuid",
-      "engine_session_id": "opencode_session_id",
       "resource_id": "general-chat",
+      "resource_type": "direct_chat",
+      "resource_name": "通用助手",
       "user_emp_no": "E10001",
+      "title": "通用助手",
+      "status": "active",
+      "resource_snapshot": { "resource_id": "general-chat", "resource_name": "通用助手", ... },
       "created_at": "2026-03-26T12:00:00",
       "updated_at": "2026-03-26T12:05:00",
-      "metadata": {
-        "adapter": "opencode"
-      }
+      "last_message_at": "2026-03-26T12:05:00",
+      "last_message_preview": "你好",
+      "metadata": { "adapter": "opencode" }
     }
   ]
 }
 ```
 
 ### `GET /api/sessions/{portal_session_id}/messages`
-返回标准化后的消息数组：
+返回会话消息。优先读取 Portal 本地持久化的 `PortalMessage`；若本地为空（如迁移场景），则回源 OpenCode 引擎并自动回填到本地存储。
+
 ```json
 [
   {
@@ -117,6 +122,12 @@ Mock 登录，设置 Cookie。
 ```
 
 ### `POST /api/sessions/{portal_session_id}/messages`
+发送消息（非流式）。后端会：
+1. 保存 user `PortalMessage`
+2. 通过 `SessionBinding` 调用对应 adapter
+3. 保存 assistant `PortalMessage`
+4. 更新会话 `last_message_preview` 和 `updated_at`
+
 请求体：
 ```json
 { "text": "你好" }
@@ -127,7 +138,33 @@ Mock 登录，设置 Cookie。
 { "response": "...assistant text..." }
 ```
 
-> 说明：当前后端会从 OpenCode 的 `{info, parts}` 结构中提取纯文本后返回。
+### `POST /api/sessions/{portal_session_id}/messages/stream`
+发送消息（SSE 流式）。流结束后会将完整 assistant 内容持久化为 `PortalMessage`。
+
+### `POST /api/sessions/{portal_session_id}/archive`
+归档会话。
+
+响应体：
+```json
+{ "success": true, "status": "archived" }
+```
+
+### `GET /api/sessions/{portal_session_id}/context`
+获取该会话的合并上下文（global + user + user_resource + session）。
+
+响应体：
+```json
+{
+  "portal_session_id": "uuid",
+  "scopes": {
+    "global": {},
+    "user": {},
+    "user_resource": {},
+    "session": {}
+  },
+  "merged": {}
+}
+```
 
 ---
 
@@ -163,8 +200,36 @@ Mock 登录，设置 Cookie。
 - `starter_prompts`
 - `installed`
 
+## 7. 上下文管理
+
+### `PATCH /api/contexts/user-resource/{resource_id}`
+更新当前用户在指定资源下的上下文。
+
+请求体：
+```json
+{
+  "payload": { "preference": "dark_mode" },
+  "summary": "用户偏好深色模式"
+}
+```
+
+响应体：
+```json
+{ "success": true, "context_id": "uuid" }
+```
+
+## 8. 管理接口
+
+### `POST /api/admin/resources/sync?workspace_id=default`
+触发从 OpenWork 同步技能并重新生成 `resources.generated.json`。
+
+响应体：
+```json
+{ "success": true, "count": 8, "workspace_id": "default" }
+```
+
 ---
 
-## 7. OpenAPI
+## 9. OpenAPI
 
 交互式文档：`/docs`

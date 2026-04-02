@@ -43,6 +43,16 @@ class ResourceConfig(BaseModel):
     iframe_url: Optional[str] = None  # Direct iframe URL for iframe mode
 
 
+class ResourceSyncMeta(BaseModel):
+    """Metadata about how a resource was discovered and synchronized"""
+    origin: str = Field(..., description="Source of resource: static, openwork, manual")
+    origin_key: str = Field(..., description="Unique key in origin system, e.g. default:coding")
+    workspace_id: Optional[str] = Field(None, description="Workspace ID for openwork origin")
+    version: Optional[str] = Field(None, description="Skill version if available")
+    sync_status: str = Field(default="active", description="active, missing, stale")
+    last_seen_at: Optional[datetime] = Field(None, description="Last sync timestamp")
+
+
 class Resource(BaseModel):
     """Resource catalog item"""
     id: str = Field(..., description="Unique resource identifier")
@@ -55,17 +65,61 @@ class Resource(BaseModel):
     tags: List[str] = Field(default_factory=list, description="Resource tags")
     config: ResourceConfig = Field(default_factory=ResourceConfig, description="Resource configuration")
     acl: Optional[Dict[str, Any]] = Field(default=None, description="Access control rules")
+    sync_meta: Optional[ResourceSyncMeta] = Field(default=None, description="Synchronization metadata")
 
 
 class PortalSession(BaseModel):
-    """Portal session for native/skill chat"""
+    """Portal session for native/skill chat and embedded resources"""
     portal_session_id: str = Field(..., description="Portal session UUID")
-    engine_session_id: str = Field(..., description="OpenCode session ID")
     resource_id: str = Field(..., description="Resource that created this session")
+    resource_type: str = Field(default="", description="Resource type at creation time")
     user_emp_no: str = Field(..., description="User employee number")
+    title: Optional[str] = Field(None, description="Session title")
+    status: str = Field(default="active", description="Session status: active, archived")
+    resource_snapshot: Dict[str, Any] = Field(default_factory=dict, description="Frozen resource config at launch")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Session creation time")
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last update time")
+    last_message_at: Optional[datetime] = Field(None, description="Last message timestamp")
+    last_message_preview: Optional[str] = Field(None, description="Preview of last message")
+    parent_session_id: Optional[str] = Field(None, description="Parent session for forked sessions")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional session metadata")
+
+
+class SessionBinding(BaseModel):
+    """Binding between a PortalSession and an underlying engine"""
+    binding_id: str = Field(..., description="Binding UUID")
+    portal_session_id: str = Field(..., description="Portal session UUID")
+    engine_type: str = Field(..., description="Engine type: opencode, websdk, iframe")
+    adapter: str = Field(default="opencode", description="Adapter name for dispatch")
+    engine_session_id: Optional[str] = Field(None, description="Engine session ID for opencode")
+    external_session_ref: Optional[str] = Field(None, description="External reference: launch_id for websdk/iframe")
+    workspace_id: Optional[str] = Field(None, description="Workspace ID for skill sessions")
+    skill_name: Optional[str] = Field(None, description="Skill name for skill chat sessions")
+    binding_status: str = Field(default="active", description="Binding status: active, closed, stale")
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="Binding creation time")
+    updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last update time")
+
+
+class PortalMessage(BaseModel):
+    """Canonical message persisted in Portal"""
+    message_id: str = Field(..., description="Message UUID")
+    portal_session_id: str = Field(..., description="Portal session UUID")
+    role: str = Field(..., description="Message role: user, assistant, system")
+    text: str = Field(..., description="Message content")
+    engine_message_id: Optional[str] = Field(None, description="Upstream message ID if available")
+    trace_id: Optional[str] = Field(None, description="Trace ID for the request")
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="Message creation time")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional message metadata")
+
+
+class ContextScope(BaseModel):
+    """Context scope for global, user, user_resource, or session level"""
+    context_id: str = Field(..., description="Context UUID")
+    scope_type: str = Field(..., description="Scope type: global, user, user_resource, session")
+    scope_key: str = Field(..., description="Scope identifier: emp_no or emp_no:resource_id")
+    payload: Dict[str, Any] = Field(default_factory=dict, description="Context payload")
+    summary: Optional[str] = Field(None, description="Text summary of context")
+    updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last update time")
 
 
 class LaunchRecord(BaseModel):
@@ -90,6 +144,30 @@ class LaunchResponse(BaseModel):
     kind: LaunchMode = Field(..., description="Launch mode: native or websdk")
     portal_session_id: Optional[str] = Field(None, description="Portal session ID for native mode")
     launch_id: Optional[str] = Field(None, description="Launch ID for websdk mode")
+
+
+class MessageCreateResponse(BaseModel):
+    """Response after sending a message"""
+    response: str = Field(..., description="Assistant response text")
+    message_id: Optional[str] = Field(None, description="Persisted assistant message ID")
+
+
+class EnrichedPortalSession(BaseModel):
+    """PortalSession with derived display fields for frontend"""
+    portal_session_id: str
+    resource_id: str
+    resource_type: str
+    resource_name: str = Field(default="", description="Resource name from snapshot")
+    user_emp_no: str
+    title: Optional[str] = None
+    status: str = "active"
+    resource_snapshot: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+    updated_at: datetime
+    last_message_at: Optional[datetime] = None
+    last_message_preview: Optional[str] = None
+    parent_session_id: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class SkillInfo(BaseModel):

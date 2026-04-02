@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { MessageSquare, Clock } from 'lucide-react';
 import { sessionApi } from '../api';
-import { resourceApi } from '../api';
 import type { PortalSession } from '../types';
 
 interface SessionSidebarProps {
@@ -18,18 +17,16 @@ export function SessionSidebar({
   onNewChat,
 }: SessionSidebarProps) {
   const [sessions, setSessions] = useState<PortalSession[]>([]);
-  const [resourceNames, setResourceNames] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadSessions();
-    loadResources();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSessionId]); // Reload sessions when current session changes to show updated state
 
   const loadSessions = async () => {
     try {
-      const response = await sessionApi.listSessions(50);
+      const response = await sessionApi.listSessions({ limit: 50 });
       setSessions(response.data.sessions);
     } catch (error) {
       console.error('Failed to load sessions:', error);
@@ -38,17 +35,14 @@ export function SessionSidebar({
     }
   };
 
-  const loadResources = async () => {
-    try {
-      const response = await resourceApi.listResources();
-      const names: Record<string, string> = {};
-      response.data.forEach((resource) => {
-        names[resource.id] = resource.name;
-      });
-      setResourceNames(names);
-    } catch (error) {
-      console.error('Failed to load resources:', error);
-    }
+  const formatTime = (dateStr?: string) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   return (
@@ -88,16 +82,16 @@ export function SessionSidebar({
                   <MessageSquare className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      {resourceNames[session.resource_id] || '未知资源'}
+                      {session.resource_name || session.title || session.resource_id || '未知资源'}
                     </p>
+                    {session.last_message_preview && (
+                      <p className="text-xs text-gray-500 truncate mt-0.5">
+                        {session.last_message_preview}
+                      </p>
+                    )}
                     <div className="flex items-center mt-1 text-xs text-gray-500">
                       <Clock className="w-3 h-3 mr-1" />
-                      {new Date(session.updated_at).toLocaleString('zh-CN', {
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                      {formatTime(session.last_message_at || session.updated_at)}
                     </div>
                   </div>
                 </div>

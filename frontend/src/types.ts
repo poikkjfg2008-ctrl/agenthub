@@ -23,6 +23,15 @@ export interface ResourceConfig {
   [key: string]: any;  // Allow additional config properties
 }
 
+export interface ResourceSyncMeta {
+  origin: string;
+  origin_key: string;
+  workspace_id?: string;
+  version?: string;
+  sync_status?: string;
+  last_seen_at?: string;
+}
+
 export interface Resource {
   id: string;
   name: string;
@@ -34,18 +43,60 @@ export interface Resource {
   tags: string[];
   config: ResourceConfig;
   acl?: any;
+  sync_meta?: ResourceSyncMeta;
 }
 
 export interface PortalSession {
   portal_session_id: string;
-  engine_session_id: string;
   resource_id: string;
+  resource_type: string;
+  resource_name?: string;
   user_emp_no: string;
+  title?: string;
+  status?: string;
+  resource_snapshot?: Record<string, any>;
   created_at: string;
   updated_at: string;
+  last_message_at?: string;
+  last_message_preview?: string;
+  parent_session_id?: string;
   metadata: {
     adapter: string;
   };
+}
+
+export interface SessionBinding {
+  binding_id: string;
+  portal_session_id: string;
+  engine_type: string;
+  adapter: string;
+  engine_session_id?: string;
+  external_session_ref?: string;
+  workspace_id?: string;
+  skill_name?: string;
+  binding_status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PortalMessage {
+  message_id: string;
+  portal_session_id: string;
+  role: 'user' | 'assistant' | 'system';
+  text: string;
+  engine_message_id?: string;
+  trace_id?: string;
+  created_at: string;
+  metadata?: Record<string, any>;
+}
+
+export interface ContextScope {
+  context_id: string;
+  scope_type: string;
+  scope_key: string;
+  payload: Record<string, any>;
+  summary?: string;
+  updated_at: string;
 }
 
 export interface LaunchRecord {

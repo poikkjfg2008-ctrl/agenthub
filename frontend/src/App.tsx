@@ -73,7 +73,6 @@ function App() {
   };
 
   const launchDefaultResource = async () => {
-    // Find default resource
     const allResources = Object.values(resourcesGrouped).flat();
     const defaultResource = allResources.find((r) => r.id === DEFAULT_RESOURCE_ID) || allResources[0];
     
@@ -89,6 +88,26 @@ function App() {
     setCurrentResource(resource);
 
     try {
+      // For native resources, try to resume the most recent active session
+      if (resource.launch_mode === 'native') {
+        const sessionsRes = await sessionApi.listSessions({
+          resource_id: resource.id,
+          status: 'active',
+          limit: 1,
+        });
+        const recentSession = sessionsRes.data.sessions[0];
+        if (recentSession) {
+          setCurrentSessionId(recentSession.portal_session_id);
+          setCurrentLaunchId(null);
+          setShowWorkspace(false);
+          setWorkspaceMode(null);
+          navigate('/');
+          setIsLaunching(false);
+          return;
+        }
+      }
+
+      // No recent session or non-native resource: create new launch/session
       const response = await resourceApi.launchResource(resource.id);
       const launchData: LaunchResponse = response.data;
 
@@ -121,12 +140,13 @@ function App() {
 
   const handleSelectSession = async (sessionId: string) => {
     try {
-      // Find resource for this session
-      const response = await sessionApi.listSessions(50);
-      const session = response.data.sessions.find((s) => s.portal_session_id === sessionId);
+      // Find resource for this session from cached resources
+      const allResources = Object.values(resourcesGrouped).flat();
+      // We can also use the session list if needed, but resources are already cached
+      const sessionsRes = await sessionApi.listSessions({ limit: 50 });
+      const session = sessionsRes.data.sessions.find((s) => s.portal_session_id === sessionId);
       
       if (session) {
-        const allResources = Object.values(resourcesGrouped).flat();
         const resource = allResources.find((r) => r.id === session.resource_id);
         if (resource) {
           setCurrentResource(resource);
@@ -144,7 +164,24 @@ function App() {
 
   const handleNewChat = async () => {
     if (currentResource) {
-      await handleSelectResource(currentResource);
+      // Force new session by bypassing resume logic
+      setIsLaunching(true);
+      try {
+        const response = await resourceApi.launchResource(currentResource.id);
+        const launchData: LaunchResponse = response.data;
+        if (launchData.kind === 'native' && launchData.portal_session_id) {
+          setCurrentSessionId(launchData.portal_session_id);
+          setCurrentLaunchId(null);
+          setShowWorkspace(false);
+          setWorkspaceMode(null);
+          navigate('/');
+        }
+      } catch (error: any) {
+        console.error('Failed to start new chat:', error);
+        alert(error.response?.data?.detail || '启动失败');
+      } finally {
+        setIsLaunching(false);
+      }
     } else {
       await launchDefaultResource();
     }
@@ -320,14 +357,8 @@ function MainContent({
   onNewChat,
   isLaunching,
 }: MainContentProps) {
-  // Handle session selection from sidebar
   const handleSessionSelect = (sessionId: string) => {
     onSelectSession(sessionId);
-  };
-
-  // Handle new chat
-  const handleNewChat = () => {
-    onNewChat();
   };
 
   if (isLaunching) {
@@ -341,7 +372,6 @@ function MainContent({
     );
   }
 
-  // No resource selected
   if (!currentResource) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50">
@@ -363,7 +393,7 @@ function MainContent({
             <SessionSidebar
               currentSessionId={currentSessionId || undefined}
               onSelectSession={handleSessionSelect}
-              onNewChat={handleNewChat}
+              onNewChat={onNewChat}
             />
           </div>
         )}
@@ -374,7 +404,7 @@ function MainContent({
             <ChatInterface
               sessionId={currentSessionId}
               resource={currentResource}
-              onRestart={handleNewChat}
+              onRestart={onNewChat}
             />
           ) : (workspaceMode === 'websdk' || workspaceMode === 'iframe') && currentLaunchId ? (
             showWorkspace ? (
@@ -429,17 +459,14 @@ function ChatRoutePage({
 
   useEffect(() => {
     if (sessionId) {
-      // Try to find resource for this session
       const allResources = Object.values(resourcesGrouped).flat();
-      // We would need to fetch session details to get resource_id
-      // For now, just use current resource or default
       if (allResources.length > 0) {
         const defaultRes = allResources.find((r) => r.id === DEFAULT_RESOURCE_ID) || allResources[0];
         setResource(defaultRes);
         onResourceChange(defaultRes);
       }
     }
-  }, [sessionId, resourcesGrouped]);
+  }, [sessionId, resourcesGrouped, onResourceChange]);
 
   if (!sessionId) return null;
 

@@ -36,7 +36,7 @@ class Settings(BaseSettings):
 
     # Portal
     portal_name: str = os.getenv("PORTAL_NAME", "AI Portal")
-    resources_path: str = os.getenv("RESOURCES_PATH", "config/resources.json")
+    resources_path: str = os.getenv("RESOURCES_PATH", "config/resources.generated.json")
 
     # CORS
     cors_origins: list = [

@@ -11,6 +11,7 @@ import type {
   EmbedConfig,
   IframeConfig,
   StreamChunk,
+  ContextScope,
 } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/';
@@ -48,18 +49,45 @@ export const resourceApi = {
 
   launchResource: (id: string) =>
     api.post<LaunchResponse>(`/api/resources/${id}/launch`),
+
+  syncResources: (workspaceId = 'default') =>
+    api.post<{ success: boolean; count: number; workspace_id: string }>(
+      `/api/admin/resources/sync?workspace_id=${workspaceId}`
+    ),
 };
 
 // Session APIs
 export const sessionApi = {
-  listSessions: (limit = 50) =>
-    api.get<{ sessions: PortalSession[] }>(`/api/sessions?limit=${limit}`),
+  listSessions: (params?: {
+    limit?: number;
+    resource_id?: string;
+    type?: string;
+    status?: string;
+  }) => {
+    const search = new URLSearchParams();
+    if (params?.limit) search.append('limit', String(params.limit));
+    if (params?.resource_id) search.append('resource_id', params.resource_id);
+    if (params?.type) search.append('type', params.type);
+    if (params?.status) search.append('status', params.status);
+    const query = search.toString();
+    return api.get<{ sessions: PortalSession[] }>(`/api/sessions${query ? '?' + query : ''}`);
+  },
 
   getMessages: (sessionId: string) =>
     api.get<Message[]>(`/api/sessions/${sessionId}/messages`),
 
   sendMessage: (sessionId: string, text: string) =>
     api.post<{ response: string }>(`/api/sessions/${sessionId}/messages`, { text }),
+
+  archiveSession: (sessionId: string) =>
+    api.post<{ success: boolean; status: string }>(`/api/sessions/${sessionId}/archive`),
+
+  getSessionContext: (sessionId: string) =>
+    api.get<{
+      portal_session_id: string;
+      scopes: Record<string, Record<string, any>>;
+      merged: Record<string, any>;
+    }>(`/api/sessions/${sessionId}/context`),
 
   /**
    * Send message with streaming response using SSE
@@ -181,6 +209,15 @@ export const launchApi = {
 
   listLaunches: (limit = 50) =>
     api.get<{ launches: LaunchRecord[] }>(`/api/launches?limit=${limit}`),
+};
+
+// Context APIs
+export const contextApi = {
+  updateUserResourceContext: (resourceId: string, payload: Record<string, any>, summary?: string) =>
+    api.patch<{ success: boolean; context_id: string }>(
+      `/api/contexts/user-resource/${resourceId}`,
+      { payload, summary }
+    ),
 };
 
 // Skill APIs
